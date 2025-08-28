@@ -1,6 +1,6 @@
 // config.js
 
-const apiKey = '3192ab461d652eebacaa42aead93db3f';
+
 const API_BASE_URL = "https://v3.football.api-sports.io";
 
 // For Fixture-specific graphics (Stats, Lineups)
