@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Profile - Season</title>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <link rel="stylesheet" href="player_profile_season.css">
+</head>
+<body>
+    
+    <div id="player-profile-container">
+        </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('player-profile-container');
+            const playerProfileSeasonDocRef = db.collection('scoreboard').doc('playerProfileSeason');
+
+            playerProfileSeasonDocRef.onSnapshot((doc) => {
+                if (doc.exists && doc.data().show && doc.data().data) {
+                    buildProfile(doc.data().data);
+                } else {
+                    container.innerHTML = '';
+                }
+            });
+
+            // --- NEW FUNCTION: Determines the CSS class based on the rating value ---
+            function getRatingColorClass(rating) {
+                const ratingValue = parseFloat(rating);
+                if (isNaN(ratingValue)) return 'rating-default';
+
+                if (ratingValue <= 5.99) return 'rating-red';
+                if (ratingValue <= 6.99) return 'rating-amber';
+                if (ratingValue <= 7.99) return 'rating-light-green';
+                if (ratingValue <= 8.99) return 'rating-dark-green';
+                if (ratingValue <= 10) return 'rating-blue';
+                return 'rating-default'; // Fallback
+            }
+
+            function buildProfile(data) {
+                container.innerHTML = '';
+
+                const playerInfo = data.player;
+                const mlsStats = data.statistics.find(s => s.league.id == 253); 
+                
+                if (!mlsStats) {
+                    container.innerHTML = `<h1>No MLS stats available for ${playerInfo.name} this season.</h1>`;
+                    return;
+                }
+                
+                const isGoalkeeper = mlsStats.games.position === 'Goalkeeper';
+                const localImagePath = `images/players/${playerInfo.id}.png`;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'profile-wrapper';
+
+                wrapper.innerHTML = `<img src="${mlsStats.team?.logo}" class="background-logo" alt="${mlsStats.team?.name} Background Logo">`;
+
+                const topBarHTML = `
+                    <div class="top-bar">
+                        <span class="player-number">#${mlsStats.games?.number || '-'}</span>
+                        <div class="player-identity">
+                            <h1 class="player-name">${playerInfo.firstname} ${playerInfo.lastname}</h1>
+                            <div class="player-bio">
+                                ${mlsStats.games?.position || 'Unknown'} | ${playerInfo.age} years old | ${playerInfo.height || '-'} | ${playerInfo.nationality}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const content = document.createElement('div');
+                content.className = 'profile-content';
+                
+                content.innerHTML = `
+                    <div class="player-column">
+                        <div class="player-image-container">
+                            <img src="${localImagePath}" 
+                                 onerror="this.onerror=null; this.src='${playerInfo.photo}';" 
+                                 alt="${playerInfo.name}" 
+                                 class="player-photo">
+                        </div>
+                    </div>
+                    <div class="stats-column">
+                        ${generateStatsCard(mlsStats, isGoalkeeper)}
+                    </div>
+                `;
+                
+                wrapper.innerHTML += topBarHTML;
+                wrapper.appendChild(content);
+                container.appendChild(wrapper);
+
+                setTimeout(() => content.classList.add('visible'), 100);
+            }
+
+            function generateStatsCard(stat, isGoalkeeper) {
+                if (!stat) return '';
+                return `
+                    <div class="stats-card">
+                        <div class="stats-card-header">
+                            <img src="${stat.league?.logo}" alt="${stat.league?.name}">
+                            <h3>${stat.league?.name} Season Stats</h3>
+                        </div>
+                        <div class="stats-grid">
+                            ${createStatItem('Appearances', stat.games?.appearences)}
+                            ${createStatItem('Lineups', stat.games?.lineups)}
+                            ${createStatItem('Minutes', stat.games?.minutes)}
+                            ${createRatingStatItem('Rating', stat.games?.rating)}
+                            
+                            ${createStatItem('Goals', stat.goals?.total)}
+                            ${createStatItem('Assists', stat.goals?.assists)}
+                            ${createStatItem('Total Shots', stat.shots?.total)}
+                            ${createStatItem('Shots on Target', stat.shots?.on)}
+                            
+                            ${createStatItem('Passes', stat.passes?.total)}
+                            ${createStatItem('Key Passes', stat.passes?.key)}
+                            
+                            ${createStatItem('Tackles', stat.tackles?.total)}
+                            ${createStatItem('Interceptions', stat.tackles?.interceptions)}
+                            ${createStatItem('Duels Won', stat.duels?.won)}
+
+                            ${createStatItem('Fouls Drawn', stat.fouls?.drawn)}
+                            ${createStatItem('Fouls Committed', stat.fouls?.committed)}
+                            ${createStatItem('Yellow Cards', stat.cards?.yellow)}
+                            ${createStatItem('Red Cards', stat.cards?.red)}
+
+                            ${createStatItem('Goals Conceded', isGoalkeeper ? stat.goals?.conceded : 'N/A')}
+                            ${createStatItem('Saves', isGoalkeeper ? stat.goals?.saves : 'N/A')}
+                            
+                            ${createStatItem('Penalty Won', stat.penalty?.won)}
+                            ${createStatItem('Penalty Scored', stat.penalty?.scored)}
+                            ${createStatItem('Penalty Missed', stat.penalty?.missed)}
+                            ${createStatItem('Penalty Saved', isGoalkeeper ? stat.penalty?.saved : 'N/A')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            function createStatItem(label, value) {
+                const displayValue = (value !== null && value !== undefined) ? value : '-';
+                return `
+                    <div class="stat-item">
+                        <span class="label">${label}</span>
+                        <span class="value">${displayValue}</span>
+                    </div>
+                `;
+            }
+
+            // --- NEW FUNCTION: A special version of createStatItem just for the rating ---
+            function createRatingStatItem(label, value) {
+                const displayValue = (value !== null && value !== undefined) ? value : '-';
+                const colorClass = getRatingColorClass(value); // Get the color class
+                return `
+                    <div class="stat-item">
+                        <span class="label">${label}</span>
+                        <span class="value ${colorClass}">${displayValue}</span>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoreboard Control Panel</title>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <link rel="stylesheet" href="scoreboard.css">
+</head>
+<body>
+
+    <div class="control-panel-wrapper">
+        <header class="panel-header">
+            <h1>Scoreboard Control Panel</h1>
+            <div id="status-light" class="status-light" title="Data Hub Connection Status"></div>
+        </header>
+
+        <div class="control-grid">
+            <div class="control-card">
+                 <h2 class="card-title">Score</h2>
+                <div class="score-controls">
+                    <div class="team-control">
+                        <div class="team-info">
+                            <img id="home-logo-control" src="" class="team-logo-small">
+                            <span id="home-name-control">HOME</span>
+                        </div>
+                        <div class="score-buttons">
+                            <button id="home-score-down">-</button>
+                            <span id="home-score-display" class="score-display">0</span>
+                            <button id="home-score-up">+</button>
+                        </div>
+                    </div>
+                    <div class="team-control">
+                        <div class="team-info">
+                            <img id="away-logo-control" src="" class="team-logo-small">
+                            <span id="away-name-control">AWAY</span>
+                        </div>
+                        <div class="score-buttons">
+                            <button id="away-score-down">-</button>
+                            <span id="away-score-display" class="score-display">0</span>
+                            <button id="away-score-up">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-card">
+                <h2 class="card-title">Game Clock & Period</h2>
+                <div class="clock-controls">
+                    <input type="number" id="minutes-input" value="0" min="0">
+                    <span>:</span>
+                    <input type="number" id="seconds-input" value="0" min="0" max="59">
+                    <button id="set-time-btn">Set</button>
+                    <button id="play-pause-btn">Play</button>
+                    <button id="reset-time-btn">Reset</button>
+                </div>
+                <div class="period-controls">
+                    <button class="period-btn" data-period="1H" data-time="0">1H</button>
+                    <button class="period-btn" data-period="HT" data-time="45">HT</button>
+                    <button class="period-btn" data-period="2H" data-time="45">2H</button>
+                    <button class="period-btn" data-period="FT" data-time="90">FT</button>
+                    <button class="period-btn" data-period="ET1" data-time="90">ET1</button>
+                    <button class="period-btn" data-period="ET2" data-time="105">ET2</button>
+                    <button class="period-btn" data-period="PENS" data-time="120">PENS</button>
+                </div>
+                 <div class="stoppage-time-controls">
+                    <input type="number" id="stoppage-input" placeholder="+ Mins" min="0">
+                    <button id="show-stoppage-btn">Show</button>
+                    <button id="hide-stoppage-btn">Hide</button>
+                </div>
+            </div>
+
+            <div class="control-card">
+                <h2 class="card-title">Broadcast Events</h2>
+                <div class="event-controls">
+                    <select id="event-type-select">
+                        <option value="goal">Goal</option>
+                        <option value="yellow">Yellow Card</option>
+                        <option value="red">Red Card</option>
+                        <option value="sub">Substitution</option>
+                        <option value="var_goal">VAR: Goal Check</option>
+                        <option value="var_no_goal">VAR: No Goal Check</option>
+                        <option value="var_penalty">VAR: Penalty Check</option>
+                        <option value="var_red">VAR: Red Card Check</option>
+                        <option value="var_identity">VAR: Mistaken Identity</option>
+                    </select>
+                    <div id="single-player-section">
+                        <label for="event-player-select">Player:</label>
+                        <select id="event-player-select">
+                            <option value="">Select Player...</option>
+                        </select>
+                    </div>
+                    <div id="sub-player-section" class="hidden">
+                        <select id="player-off-select" class="sub-select">
+                            <option value="">Player Off...</option>
+                        </select>
+                        <select id="player-on-select" class="sub-select">
+                            <option value="">Player On...</option>
+                        </select>
+                    </div>
+                    <div id="var-team-section" class="hidden">
+                        <label for="var-team-select">Team:</label>
+                        <select id="var-team-select">
+                           </select>
+                    </div>
+                    <button id="trigger-event-btn">Trigger Event</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const scoreboardDocRef = db.collection('scoreboard').doc('liveState');
+            let gameState = {}; 
+            let timerInterval = null;
+            // NEW: A variable to hold the current fixture data so we can access team IDs
+            let currentFixture = null; 
+
+            const homeScoreDisplay = document.getElementById('home-score-display');
+            const awayScoreDisplay = document.getElementById('away-score-display');
+            const minutesInput = document.getElementById('minutes-input');
+            const secondsInput = document.getElementById('seconds-input');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const statusLight = document.getElementById('status-light');
+            const eventTypeSelect = document.getElementById('event-type-select');
+            const singlePlayerSection = document.getElementById('single-player-section');
+            const subPlayerSection = document.getElementById('sub-player-section');
+            const varTeamSection = document.getElementById('var-team-section');
+            const eventPlayerSelect = document.getElementById('event-player-select');
+            const playerOffSelect = document.getElementById('player-off-select');
+            const playerOnSelect = document.getElementById('player-on-select');
+            const varTeamSelect = document.getElementById('var-team-select');
+
+            function loadDataFromHub() {
+                const fixtureDetailStr = localStorage.getItem('fixture_detail_data');
+                const lineupsStr = localStorage.getItem('fixture_lineups_data');
+                
+                [eventPlayerSelect, playerOffSelect, playerOnSelect].forEach(sel => sel.innerHTML = '');
+
+                if (fixtureDetailStr) {
+                    const fixture = JSON.parse(fixtureDetailStr);
+                    // NEW: Store the fixture data in our global variable for later use
+                    currentFixture = fixture;
+
+                    document.getElementById('home-name-control').textContent = fixture.teams.home.name;
+                    document.getElementById('away-name-control').textContent = fixture.teams.away.name;
+                    document.getElementById('home-logo-control').src = `assets/logos/${fixture.teams.home.id}.png`;
+                    document.getElementById('away-logo-control').src = `assets/logos/${fixture.teams.away.id}.png`;
+
+                    varTeamSelect.innerHTML = `
+                        <option value="${fixture.teams.home.id}">${fixture.teams.home.name}</option>
+                        <option value="${fixture.teams.away.id}">${fixture.teams.away.name}</option>
+                    `;
+                    
+                    statusLight.classList.add('connected');
+
+                    const populateSelect = (select, teamData) => {
+                        const optGroup = document.createElement('optgroup');
+                        optGroup.label = teamData.team.name;
+                        teamData.startXI.forEach(p => {
+                            const option = document.createElement('option');
+                            option.value = p.player.name;
+                            option.dataset.teamId = teamData.team.id;
+                            option.textContent = `#${p.player.number} - ${p.player.name}`;
+                            optGroup.appendChild(option);
+                        });
+                        if (teamData.substitutes.length > 0) {
+                            const separator = document.createElement('option');
+                            separator.disabled = true;
+                            separator.textContent = '--- Subs ---';
+                            optGroup.appendChild(separator);
+                        }
+                        teamData.substitutes.forEach(p => {
+                            const option = document.createElement('option');
+                            option.value = p.player.name;
+                            option.dataset.teamId = teamData.team.id;
+                            option.textContent = `#${p.player.number} - ${p.player.name}`;
+                            optGroup.appendChild(option);
+                        });
+                        select.appendChild(optGroup);
+                    };
+
+                    if (lineupsStr) {
+                        const lineups = JSON.parse(lineupsStr);
+                        if (lineups && lineups.length > 0) {
+                            const homeTeam = lineups.find(l => l.team.id === fixture.teams.home.id);
+                            const awayTeam = lineups.find(l => l.team.id === fixture.teams.away.id);
+
+                            [eventPlayerSelect, playerOffSelect, playerOnSelect].forEach(sel => {
+                                sel.appendChild(document.createElement('option')).textContent = 'Select Player...';
+                                if (homeTeam) populateSelect(sel, homeTeam);
+                                if (awayTeam) populateSelect(sel, awayTeam);
+                            });
+                        } else {
+                            [eventPlayerSelect, playerOffSelect, playerOnSelect].forEach(sel => {
+                                sel.innerHTML = '<option value="" disabled>Lineups not available</option>';
+                            });
+                        }
+                    }
+
+                } else {
+                    statusLight.classList.remove('connected');
+                }
+            }
+
+            function saveState() {
+                scoreboardDocRef.set(gameState).catch(error => console.error("Error writing to Firestore: ", error));
+            }
+            
+            function updateDisplays() {
+                homeScoreDisplay.textContent = gameState.homeScore || 0;
+                awayScoreDisplay.textContent = gameState.awayScore || 0;
+                minutesInput.value = gameState.minutes || 0;
+                secondsInput.value = gameState.seconds || 0;
+            }
+
+            document.getElementById('home-score-up').addEventListener('click', () => { gameState.homeScore++; saveState(); updateDisplays(); });
+            document.getElementById('home-score-down').addEventListener('click', () => { if (gameState.homeScore > 0) gameState.homeScore--; saveState(); updateDisplays(); });
+            document.getElementById('away-score-up').addEventListener('click', () => { gameState.awayScore++; saveState(); updateDisplays(); });
+            document.getElementById('away-score-down').addEventListener('click', () => { if (gameState.awayScore > 0) gameState.awayScore--; saveState(); updateDisplays(); });
+            document.getElementById('set-time-btn').addEventListener('click', () => {
+                gameState.minutes = parseInt(minutesInput.value) || 0;
+                gameState.seconds = parseInt(secondsInput.value) || 0;
+                saveState(); updateDisplays();
+            });
+            playPauseBtn.addEventListener('click', () => {
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    playPauseBtn.textContent = 'Play';
+                } else {
+                    playPauseBtn.textContent = 'Pause';
+                    timerInterval = setInterval(() => {
+                        gameState.seconds++;
+                        if (gameState.seconds >= 60) { gameState.seconds = 0; gameState.minutes++; }
+                        saveState(); updateDisplays();
+                    }, 1000);
+                }
+            });
+            document.getElementById('reset-time-btn').addEventListener('click', () => {
+                if (timerInterval) { clearInterval(timerInterval); timerInterval = null; playPauseBtn.textContent = 'Play'; }
+                gameState.minutes = 0;
+                gameState.seconds = 0;
+                saveState(); updateDisplays();
+            });
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    gameState.period = btn.dataset.period;
+                    gameState.minutes = parseInt(btn.dataset.time);
+                    gameState.seconds = 0;
+                    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; playPauseBtn.textContent = 'Play'; }
+                    saveState();
+                    updateDisplays();
+                });
+            });
+            document.getElementById('show-stoppage-btn').addEventListener('click', () => {
+                gameState.stoppageTime = document.getElementById('stoppage-input').value;
+                gameState.showStoppage = true;
+                saveState();
+            });
+            document.getElementById('hide-stoppage-btn').addEventListener('click', () => {
+                gameState.showStoppage = false;
+                saveState();
+            });
+
+            eventTypeSelect.addEventListener('change', () => {
+                const type = eventTypeSelect.value;
+                const isSub = type === 'sub';
+                const isVar = type.startsWith('var');
+                
+                singlePlayerSection.classList.toggle('hidden', isSub || isVar);
+                subPlayerSection.classList.toggle('hidden', !isSub);
+                varTeamSection.classList.toggle('hidden', !isVar);
+            });
+
+            // MODIFIED: This listener now handles automatic score incrementing
+            document.getElementById('trigger-event-btn').addEventListener('click', () => {
+                const type = eventTypeSelect.value;
+                let eventData = {};
+
+                if (type === 'sub') {
+                    const playerOnOption = playerOnSelect.options[playerOnSelect.selectedIndex];
+                    const playerOffOption = playerOffSelect.options[playerOffSelect.selectedIndex];
+                    if (!playerOnOption.value || !playerOffOption.value) return;
+                    eventData = {
+                        playerOn: playerOnOption.value,
+                        playerOff: playerOffOption.value,
+                        teamId: playerOnOption.dataset.teamId,
+                    };
+                } else if (type.startsWith('var')) {
+                    eventData = {
+                        teamId: varTeamSelect.value,
+                    };
+                } else {
+                    const playerOption = eventPlayerSelect.options[eventPlayerSelect.selectedIndex];
+                    if (!playerOption.value) return;
+                    eventData = {
+                        player: playerOption.value,
+                        teamId: playerOption.dataset.teamId,
+                    };
+                }
+                
+                gameState.event = { type, data: eventData, id: new Date().getTime() };
+
+                // --- NEW LOGIC FOR AUTO-SCORING ---
+                // 1. Check if the triggered event is a 'goal' and that we have loaded the fixture data
+                if (type === 'goal' && currentFixture) {
+                    const scoringTeamId = eventData.teamId;
+
+                    // 2. Compare the scoring team's ID to the home and away team IDs
+                    if (scoringTeamId == currentFixture.teams.home.id) {
+                        gameState.homeScore++; // If it's the home team, increment their score
+                    } else if (scoringTeamId == currentFixture.teams.away.id) {
+                        gameState.awayScore++; // If it's the away team, increment their score
+                    }
+                    
+                    // 3. Instantly update the score display on this control panel
+                    updateDisplays();
+                }
+                // --- END OF NEW LOGIC ---
+                
+                saveState(); // Save the updated gameState (with the event and potentially new score)
+            });
+
+            scoreboardDocRef.get().then((doc) => {
+                if (doc.exists) {
+                    gameState = doc.data();
+                } else {
+                    gameState = { homeScore: 0, awayScore: 0, minutes: 0, seconds: 0, period: '1H', showStoppage: false, event: null };
+                }
+                loadDataFromHub();
+                updateDisplays();
+                saveState();
+            });
+
+            window.addEventListener('storage', (event) => {
+                if (event.key === 'fixture_lineups_data' || event.key === 'fixture_detail_data') {
+                    loadDataFromHub();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

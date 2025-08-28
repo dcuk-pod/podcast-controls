@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scoreboard Output</title>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <link rel="stylesheet" href="scoreboard.css">
+    <style>
+        /* --- NEW: Visibility control for the scoreboard --- */
+        #scoreboard-main-container {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        #scoreboard-main-container.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="output">
+
+    <!-- UPDATED: The main container now has an ID for easy selection -->
+    <div id="scoreboard-main-container" class="scoreboard-container">
+        <div class="scoreboard-wrapper" id="scoreboard-wrapper">
+            <div class="team-display home">
+                <img id="home-logo-output" src="" class="team-logo-output">
+                <span id="home-initials-output" class="team-initials"></span>
+            </div>
+            <div class="score-box">
+                <span id="home-score-output">0</span>
+                <span>-</span>
+                <span id="away-score-output">0</span>
+            </div>
+            <div class="team-display away">
+                <span id="away-initials-output" class="team-initials"></span>
+                <img id="away-logo-output" src="" class="team-logo-output">
+            </div>
+            <div class="time-box">
+                <span id="time-output">00:00</span>
+                <span id="period-output-text" class="period-text"></span>
+            </div>
+            <div class="stoppage-box" id="stoppage-box">
+                +<span id="stoppage-time-output">0</span>
+            </div>
+        </div>
+        
+        <div class="event-dropdown" id="event-dropdown">
+            <div id="event-flash-view" class="event-view hidden">
+                <span id="event-flash-text">GOAL</span>
+            </div>
+    
+            <div id="event-detail-view" class="event-view hidden">
+                <img id="event-logo" src="" class="event-logo">
+                <div id="event-details">
+                    <div id="event-title"></div>
+                    <div id="event-player-details"></div>
+                </div>
+                <div id="event-card-icon" class="event-card-icon"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Element References ---
+            const scoreboardMainContainer = document.getElementById('scoreboard-main-container');
+            const homeScore = document.getElementById('home-score-output');
+            const awayScore = document.getElementById('away-score-output');
+            const timeDisplay = document.getElementById('time-output');
+            const periodTextDisplay = document.getElementById('period-output-text');
+            const stoppageBox = document.getElementById('stoppage-box');
+            const stoppageTime = document.getElementById('stoppage-time-output');
+            const homeInitials = document.getElementById('home-initials-output');
+            const awayInitials = document.getElementById('away-initials-output');
+            const homeLogo = document.getElementById('home-logo-output');
+            const awayLogo = document.getElementById('away-logo-output');
+            const eventDropdown = document.getElementById('event-dropdown');
+            const eventFlashView = document.getElementById('event-flash-view');
+            const eventFlashText = document.getElementById('event-flash-text');
+            const eventDetailView = document.getElementById('event-detail-view');
+            const eventLogo = document.getElementById('event-logo');
+            const eventTitle = document.getElementById('event-title');
+            const eventPlayerDetails = document.getElementById('event-player-details');
+            const eventCardIcon = document.getElementById('event-card-icon');
+            
+            // --- Firestore Document References ---
+            const liveStateDocRef = db.collection('scoreboard').doc('liveState');
+            const fixtureDocRef = db.collection('scoreboard').doc('currentFixture');
+            const scoreboardVisibilityDocRef = db.collection('scoreboard').doc('visibility'); // New ref
+            
+            let lastEventId = null;
+
+            // --- NEW: Listener for Scoreboard Visibility ---
+            scoreboardVisibilityDocRef.onSnapshot((doc) => {
+                if (doc.exists && doc.data().show) {
+                    scoreboardMainContainer.classList.add('visible');
+                } else {
+                    scoreboardMainContainer.classList.remove('visible');
+                }
+            });
+
+            // --- Listener for Fixture Data ---
+            fixtureDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const fixture = doc.data();
+                    if (fixture.teams && fixture.teams.home && fixture.teams.away) {
+                        const homeId = fixture.teams.home.id;
+                        const awayId = fixture.teams.away.id;
+
+                        homeInitials.textContent = TEAM_INITIALS[homeId] || '???';
+                        awayInitials.textContent = TEAM_INITIALS[awayId] || '???';
+                        homeLogo.src = `assets/logos/${homeId}.png`;
+                        awayLogo.src = `assets/logos/${awayId}.png`;
+
+                        const homeColor = TEAM_COLORS[homeId] || TEAM_COLORS['default'];
+                        const awayColor = TEAM_COLORS[awayId] || TEAM_COLORS['default'];
+                        document.querySelector('.team-display.home').style.backgroundColor = homeColor;
+                        document.querySelector('.team-display.away').style.backgroundColor = awayColor;
+                        
+                        const homeAltColor = TEAM_COLORS_ALT[homeId] || TEAM_COLORS_ALT['default'];
+                        const awayAltColor = TEAM_COLORS_ALT[awayId] || TEAM_COLORS_ALT['default'];
+                        homeInitials.style.color = homeAltColor;
+                        awayInitials.style.color = awayAltColor;
+                    }
+                }
+            });
+
+            // --- Listener for Live Game State ---
+            liveStateDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const state = doc.data();
+
+                    if (homeScore.textContent !== (state.homeScore || 0).toString()) {
+                        homeScore.textContent = state.homeScore || 0;
+                        homeScore.classList.add('flash');
+                        setTimeout(() => homeScore.classList.remove('flash'), 500);
+                    }
+                    if (awayScore.textContent !== (state.awayScore || 0).toString()) {
+                        awayScore.textContent = state.awayScore || 0;
+                        awayScore.classList.add('flash');
+                        setTimeout(() => awayScore.classList.remove('flash'), 500);
+                    }
+
+                    if (state.period === 'PENS') {
+                        timeDisplay.textContent = 'PENS';
+                        periodTextDisplay.style.display = 'none';
+                    } else {
+                        const minutes = String(state.minutes || 0).padStart(2, '0');
+                        const seconds = String(state.seconds || 0).padStart(2, '0');
+                        timeDisplay.textContent = `${minutes}:${seconds}`;
+                        const intervalPeriods = ['HT', 'FT', 'ET1', 'ET2'];
+                        if (intervalPeriods.includes(state.period)) {
+                            periodTextDisplay.textContent = state.period;
+                            periodTextDisplay.style.display = 'inline';
+                        } else {
+                            periodTextDisplay.style.display = 'none';
+                        }
+                    }
+
+                    if (state.showStoppage && state.stoppageTime) {
+                        stoppageTime.textContent = state.stoppageTime;
+                        stoppageBox.classList.add('visible');
+                    } else {
+                        stoppageBox.classList.remove('visible');
+                    }
+                    
+                    if (state.event && state.event.id !== lastEventId) {
+                        lastEventId = state.event.id;
+                        triggerEventAnimation(state.event);
+                    }
+                }
+            });
+            
+            function triggerEventAnimation(event) {
+                if (event.type === 'goal') {
+                    const teamId = event.data.teamId;
+                    const primaryColor = TEAM_COLORS[teamId] || TEAM_COLORS['default'];
+                    const altColor = TEAM_COLORS_ALT[teamId] || TEAM_COLORS_ALT['default'];
+
+                    eventDetailView.classList.add('hidden');
+                    eventFlashView.classList.remove('hidden');
+                    eventFlashView.style.backgroundColor = primaryColor;
+                    eventFlashText.style.color = altColor;
+                    eventDropdown.classList.add('visible');
+
+                    let flashes = 0;
+                    const animationInterval = setInterval(() => {
+                        const isAltState = flashes % 2 !== 0;
+                        eventFlashView.style.backgroundColor = isAltState ? altColor : primaryColor;
+                        eventFlashText.style.color = isAltState ? primaryColor : altColor;
+                        flashes++;
+                    }, 250);
+
+                    setTimeout(() => {
+                        clearInterval(animationInterval);
+                        eventFlashView.classList.add('hidden');
+                        eventDetailView.classList.remove('hidden');
+                        eventLogo.src = `assets/logos/${teamId}.png`;
+                        eventTitle.textContent = 'GOAL';
+                        eventPlayerDetails.innerHTML = event.data.player;
+                        eventCardIcon.innerHTML = '';
+                    }, 2500); 
+
+                    setTimeout(() => {
+                        eventDropdown.classList.remove('visible');
+                    }, 10000);
+
+                    return;
+                }
+
+                let title = '';
+                let playerHtml = '';
+                let cardHtml = '';
+                
+                eventLogo.src = `assets/logos/${event.data.teamId}.png`;
+
+                switch (event.type) {
+                    case 'yellow': 
+                        title = 'YELLOW CARD'; 
+                        playerHtml = event.data.player; 
+                        cardHtml = '<div class="card yellow"></div>';
+                        break;
+                    case 'red': 
+                        title = 'RED CARD'; 
+                        playerHtml = event.data.player; 
+                        cardHtml = '<div class="card red"></div>';
+                        break;
+                    case 'sub': 
+                        title = 'SUBSTITUTION'; 
+                        playerHtml = `<span class="sub-on">⬆ ${event.data.playerOn}</span><span class="sub-off">⬇ ${event.data.playerOff}</span>`;
+                        break;
+                    case 'var_goal': title = 'VAR CHECK'; playerHtml = 'POSSIBLE GOAL'; break;
+                    case 'var_no_goal': title = 'VAR CHECK'; playerHtml = 'POSSIBLE DISALLOWED GOAL'; break;
+                    case 'var_penalty': title = 'VAR CHECK'; playerHtml = 'POSSIBLE PENALTY'; break;
+                    case 'var_red': title = 'VAR CHECK'; playerHtml = 'POSSIBLE RED CARD'; break;
+                    case 'var_identity': title = 'VAR CHECK'; playerHtml = 'MISTAKEN IDENTITY'; break;
+                }
+                
+                eventFlashView.classList.add('hidden');
+                eventDetailView.classList.remove('hidden');
+                eventTitle.textContent = title;
+                eventPlayerDetails.innerHTML = playerHtml;
+                eventCardIcon.innerHTML = cardHtml;
+                
+                eventDropdown.classList.add('visible');
+                
+                setTimeout(() => {
+                    eventDropdown.classList.remove('visible');
+                }, 10000);
+            }
+        });
+    </script>
+</body>
+</html>

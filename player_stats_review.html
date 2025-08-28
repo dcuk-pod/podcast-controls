@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Statistics - Review</title>
+    <link rel="stylesheet" href="player_stats.css">
+</head>
+<body>
+    <div id="player-stats-container">
+        <h1>Waiting for review data...</h1>
+    </div>
+
+    <script src="config.js"></script> 
+    <script src="player_stats.js"></script>
+    <script>
+        // --- This script block sets the page type to 'review' ---
+        // This tells player_stats.js to fetch data using the 'fixtureReviewId'.
+        const urlParams = new URLSearchParams('?type=review');
+    </script>
+</body>
+</html>

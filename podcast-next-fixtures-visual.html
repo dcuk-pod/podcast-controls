@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Next Fixtures Ticker</title>
+    <!-- Firebase scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <!-- Your Firebase and API config files -->
+    <script src="firebase-init.js"></script>
+    <script src="config.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        body {
+            background-color: transparent;
+            font-family: 'Poppins', sans-serif;
+            
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .ticker-wrapper {
+            max-width: 960px;
+            height: 100px;
+            background-color: #fff;
+            
+            white-space: nowrap;
+            overflow: hidden;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .ticker-wrapper.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .ticker-content {
+            display: inline-block;
+            height: 100%;
+            animation-name: scroll-left;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+        }
+
+        @keyframes scroll-left {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        .ticker-wrapper:hover .ticker-content {
+            animation-play-state: paused;
+        }
+
+        .fixture-item {
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 0 30px;
+            box-sizing: border-box;
+            border-right: 1px solid #ddd;
+        }
+
+        .fixture-date {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .teams-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 5px 0;
+        }
+
+        .team-logo {
+            width: 32px;
+            height: 32px;
+        }
+
+        .vs-text {
+            font-size: 16px;
+            font-weight: 700;
+            color: #999;
+        }
+
+        .league-info {
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="ticker-wrapper hidden" id="ticker-wrapper">
+        <div class="ticker-content" id="fixtures-content">
+            <!-- Fixtures will be loaded here by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fixturesContent = document.getElementById('fixtures-content');
+            const tickerWrapper = document.getElementById('ticker-wrapper');
+
+            // --- Firestore Document References ---
+            const visibilityDocRef = db.collection('podcast').doc('visibility');
+            const nextFixturesDataDocRef = db.collection('podcast').doc('nextFixturesData');
+
+            function renderFixtures(fixtures) {
+                fixturesContent.innerHTML = ''; 
+
+                if (!fixtures || fixtures.length === 0) {
+                    fixturesContent.innerHTML = '<div>No upcoming fixtures found.</div>';
+                    fixturesContent.style.animationName = 'none';
+                    return;
+                }
+                
+                let fixturesHTML = '';
+                fixtures.forEach(fixture => {
+                    const fixtureDate = new Date(fixture.fixture.date);
+                    const formattedDate = fixtureDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', weekday: 'short' });
+                    const formattedTime = fixtureDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+                    fixturesHTML += `
+                        <div class="fixture-item">
+                            <div class="fixture-date">${formattedDate} - ${formattedTime}</div>
+                            <div class="teams-row">
+                                <img src="${fixture.teams.home.logo}" class="team-logo" title="${fixture.teams.home.name}">
+                                <span class="vs-text">vs</span>
+                                <img src="${fixture.teams.away.logo}" class="team-logo" title="${fixture.teams.away.name}">
+                            </div>
+                            <div class="league-info">${fixture.league.name}</div>
+                        </div>
+                    `;
+                });
+                
+                fixturesContent.innerHTML = fixturesHTML + fixturesHTML;
+
+                fixturesContent.style.animationName = 'scroll-left';
+
+                setTimeout(() => {
+                    const contentWidth = fixturesContent.scrollWidth / 2;
+                    const scrollSpeed = 80; // pixels per second
+                    const duration = contentWidth / scrollSpeed;
+                    
+                    fixturesContent.style.animationDuration = `${duration}s`;
+                }, 100);
+            }
+
+            // --- Firestore Listeners ---
+            visibilityDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const visibilityData = doc.data();
+                    if (visibilityData.showNextFixtures) {
+                        tickerWrapper.classList.remove('hidden');
+                    } else {
+                        tickerWrapper.classList.add('hidden');
+                    }
+                }
+            });
+
+            nextFixturesDataDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    renderFixtures(data.fixtures);
+                } else {
+                    renderFixtures([]);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

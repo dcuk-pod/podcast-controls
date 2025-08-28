@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Ticker</title>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <link rel="stylesheet" href="scroller.css">
+</head>
+<body>
+    <div id="main-container" class="main-container">
+        </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainContainer = document.getElementById('main-container');
+            const scrollerDocRef = db.collection('scoreboard').doc('scroller');
+            const scrollerDataDocRef = db.collection('scoreboard').doc('scrollerData');
+            const fixtureDocRef = db.collection('scoreboard').doc('currentFixture');
+            const playerStatsDataDocRef = db.collection('scoreboard').doc('playerStatsData');
+            const matchStatsDataDocRef = db.collection('scoreboard').doc('matchStatsData');
+
+            let showScroller = false;
+            let currentFixtureDetail = null;
+            let liveFixtures = null;
+            let playerStats = null;
+            let matchStats = null;
+
+            let panelInterval;
+            const panelSwitchInterval = 10000; // 10 seconds per panel
+
+            function renderGraphic() {
+                if (showScroller) {
+                    buildGraphic();
+                } else {
+                    mainContainer.innerHTML = '';
+                    if (panelInterval) clearInterval(panelInterval);
+                }
+            }
+
+            scrollerDocRef.onSnapshot((doc) => {
+                showScroller = doc.exists && doc.data().show;
+                renderGraphic();
+            });
+            scrollerDataDocRef.onSnapshot((doc) => {
+                if (doc.exists) liveFixtures = doc.data().liveFixtures;
+                renderGraphic();
+            });
+            fixtureDocRef.onSnapshot((doc) => {
+                if (doc.exists) currentFixtureDetail = doc.data();
+                renderGraphic();
+            });
+            playerStatsDataDocRef.onSnapshot((doc) => {
+                if (doc.exists) playerStats = doc.data().stats;
+                renderGraphic();
+            });
+            matchStatsDataDocRef.onSnapshot((doc) => {
+                if (doc.exists) matchStats = doc.data().stats;
+                renderGraphic();
+            });
+
+            function buildGraphic() {
+                mainContainer.innerHTML = `
+                    <div class="dynamic-header">
+                        <h1 id="panel-title">Live Scores</h1>
+                    </div>
+                    <div class="panel-viewport">
+                        <div class="panel-filmstrip" id="filmstrip"></div>
+                    </div>
+                `;
+                updatePanels();
+            }
+
+            function updatePanels() {
+                const filmstrip = document.getElementById('filmstrip');
+                if (!filmstrip) return;
+                filmstrip.innerHTML = '';
+
+                // Panel 1: Live Scores
+                const liveScoresPanel = document.createElement('div');
+                liveScoresPanel.className = 'ticker-panel';
+                liveScoresPanel.dataset.title = 'Live Scores';
+                let scoresHTML = '<div class="live-scores-list">';
+                if (liveFixtures && liveFixtures.length > 0) {
+                    liveFixtures.forEach(fixture => { scoresHTML += `<div class="score-item"><span class="status">${fixture.fixture.status.elapsed}'</span><span class="team-name">${fixture.teams.home.name}</span><span class="score">${fixture.goals.home} - ${fixture.goals.away}</span><span class="team-name" style="text-align: right;">${fixture.teams.away.name}</span></div>`; });
+                } else { scoresHTML += '<div>No live games currently.</div>'; }
+                scoresHTML += '</div>';
+                liveScoresPanel.innerHTML = scoresHTML;
+                filmstrip.appendChild(liveScoresPanel);
+
+                // Panel 2: Match Stats
+                if (currentFixtureDetail && matchStats) {
+                    const matchStatsPanel = document.createElement('div');
+                    matchStatsPanel.className = 'ticker-panel';
+                    matchStatsPanel.dataset.title = 'Match Stats';
+                    const homeTeamStats = matchStats.find(team => team.team.id === currentFixtureDetail.teams.home.id);
+                    const awayTeamStats = matchStats.find(team => team.team.id === currentFixtureDetail.teams.away.id);
+                    const findStat = (stats, type) => stats?.statistics.find(s => s.type === type)?.value ?? '-';
+                    const statsToDisplay = [{ type: 'Total Shots', label: 'Total Shots' }, { type: 'Shots on Goal', label: 'On Target' }, { type: 'Shots off Goal', label: 'Off Target'}, { type: 'Blocked Shots', label: 'Shots Blocked'}, { type: 'Offsides', label: 'Offside'}, { type: 'Ball Possession', label: 'Possession' }, { type: 'Total passes', label: 'Total Passes'}, { type: 'Passes %', label: 'Pass Acc.'}, { type: 'Corner Kicks', label: 'Corners' }, { type: 'Fouls', label: 'Fouls' }, { type: 'Yellow Cards', label: 'Yellow Cards'}, { type: 'expected_goals', label: 'xG'}];
+                    let statsGridHTML = '';
+                    statsToDisplay.forEach(stat => { statsGridHTML += `<div>${findStat(homeTeamStats, stat.type)}</div><div class="label">${stat.label}</div><div>${findStat(awayTeamStats, stat.type)}</div>`; });
+                    
+                    // --- MODIFICATION START ---
+                    // REASON: The original code directly used currentFixtureDetail.goals, which can be null before a match starts, causing "null-null".
+                    // This new code finds the latest score from the live fixtures data first.
+                    // If the match isn't live yet, it checks the original fixture data.
+                    // If both are unavailable, it safely defaults the score to 0 using the '??' operator.
+                    const liveMatchData = liveFixtures ? liveFixtures.find(f => f.fixture.id === currentFixtureDetail.fixture.id) : null;
+                    const homeScore = liveMatchData?.goals?.home ?? currentFixtureDetail.goals?.home ?? 0;
+                    const awayScore = liveMatchData?.goals?.away ?? currentFixtureDetail.goals?.away ?? 0;
+                    // --- MODIFICATION END ---
+                    
+                    // --- MODIFICATION START ---
+                    // REASON: The score variables (homeScore, awayScore) are now used here instead of the potentially null values.
+                    matchStatsPanel.innerHTML = `<div class="stats-header"><div class="stats-team home"><img src="${currentFixtureDetail.teams.home.logo}" class="stats-team-logo"><span>${currentFixtureDetail.teams.home.name}</span></div><div class="stats-score">${homeScore} - ${awayScore}</div><div class="stats-team away"><img src="${currentFixtureDetail.teams.away.logo}" class="stats-team-logo"><span>${currentFixtureDetail.teams.away.name}</span></div></div><div class="stats-grid">${statsGridHTML}</div>`;
+                    // --- MODIFICATION END ---
+                    filmstrip.appendChild(matchStatsPanel);
+                }
+
+                // Panels 3 & 4: Player Ratings
+                if (playerStats && playerStats.length === 2) {
+                    const homeTeamPlayerData = playerStats.find(t => t.team.id === currentFixtureDetail.teams.home.id) || playerStats[0];
+                    const awayTeamPlayerData = playerStats.find(t => t.team.id === currentFixtureDetail.teams.away.id) || playerStats[1];
+
+                    const homeRatingsPanel = document.createElement('div');
+                    homeRatingsPanel.className = 'ticker-panel player-ratings-panel';
+                    homeRatingsPanel.dataset.title = `${homeTeamPlayerData.team.name} Ratings`;
+                    homeRatingsPanel.innerHTML = generatePlayerRatingsHTML(homeTeamPlayerData);
+                    filmstrip.appendChild(homeRatingsPanel);
+                    
+                    const awayRatingsPanel = document.createElement('div');
+                    awayRatingsPanel.className = 'ticker-panel player-ratings-panel';
+                    awayRatingsPanel.dataset.title = `${awayTeamPlayerData.team.name} Ratings`;
+                    awayRatingsPanel.innerHTML = generatePlayerRatingsHTML(awayTeamPlayerData);
+                    filmstrip.appendChild(awayRatingsPanel);
+                }
+                
+                startCarousel(); 
+            }
+
+            function generatePlayerRatingsHTML(teamData) {
+                let ratingsHTML = '<div class="player-rating-list">';
+                teamData.players.forEach(p => {
+                    const stats = p.statistics[0];
+                    if (stats.games.minutes) { 
+                        const rating = stats.games.rating ? parseFloat(stats.games.rating).toFixed(1) : '-';
+                        
+                        const r = parseFloat(rating);
+                        let ratingClass = '';
+                        if (r < 6) ratingClass = 'rating-red';
+                        else if (r >= 7 && r < 8) ratingClass = 'rating-green-light';
+                        else if (r >= 8 && r < 9) ratingClass = 'rating-green-dark';
+                        else if (r >= 9) ratingClass = 'rating-blue';
+
+                        ratingsHTML += `
+                            <div class="rating-item">
+                                <span class="player-name">${p.player.name}</span>
+                                <span class="player-rating ${ratingClass}">${rating}</span>
+                            </div>
+                        `;
+                    }
+                });
+                ratingsHTML += '</div>';
+                return ratingsHTML;
+            }
+
+            function startCarousel() {
+                if (panelInterval) clearInterval(panelInterval);
+                const filmstrip = document.getElementById('filmstrip');
+                const panelTitle = document.getElementById('panel-title');
+                if (!filmstrip || !panelTitle) return;
+
+                let currentPanel = 0;
+                const totalPanels = filmstrip.children.length;
+
+                if (totalPanels <= 1) return;
+
+                filmstrip.style.width = `${totalPanels * 100}%`;
+                filmstrip.childNodes.forEach(node => node.style.width = `${100 / totalPanels}%`);
+                filmstrip.style.transform = `translateX(0%)`;
+                panelTitle.textContent = filmstrip.children[0].dataset.title || 'Live Ticker';
+
+                panelInterval = setInterval(() => {
+                    currentPanel = (currentPanel + 1) % totalPanels;
+                    filmstrip.style.transform = `translateX(-${currentPanel * (100 / totalPanels)}%)`;
+                    panelTitle.textContent = filmstrip.children[currentPanel].dataset.title || 'Live Ticker';
+                }, panelSwitchInterval);
+            }
+        });
+    </script>
+</body>
+</html>

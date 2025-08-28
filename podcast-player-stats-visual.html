@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Statistics</title>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+
+        body {
+            background-color: transparent;
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .stats-wrapper {
+            width: 1920px;
+            height: 1080px;
+            background-color: #ffffff;
+            box-sizing: border-box;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .stats-wrapper.visible {
+            opacity: 1;
+        }
+
+        .background-logos {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10%;
+            box-sizing: border-box;
+            z-index: 0;
+        }
+
+        .background-logos img {
+            width: 35%;
+            opacity: 0.08;
+        }
+
+        .stats-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+
+        .league-logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        .fixture-details {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .fixture-name {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            font-weight: 700;
+            font-size: 24px;
+        }
+
+        .fixture-meta {
+            font-size: 16px;
+            color: #888;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .tables-area {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding-top: 10px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            overflow: hidden;
+        }
+
+        .tables-area.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .team-table-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .team-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
+        .team-header img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .team-header h3 {
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .player-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .player-table th,
+        .player-table td {
+            padding: 6px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .player-table thead th {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            text-transform: uppercase;
+            background-color: #f7fafc;
+        }
+
+        .player-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .player-table td {
+            font-size: 10px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .rating-cell {
+            font-weight: 700;
+            border-radius: 4px;
+            padding: 4px 4px;
+            text-align: center;
+            color: white;
+            min-width: 30px;
+            display: inline-block;
+        }
+
+        .rating-red { background-color: #e53e3e; }
+        .rating-neutral { background-color: #a0aec0; color: #1a202c;}
+        .rating-green-light { background-color: #68d391; color: #1a202c; }
+        .rating-green-dark { background-color: #38a169; }
+        .rating-blue { background-color: #4299e1; }
+
+        .card-yellow {
+            display: inline-block;
+            width: 10px;
+            height: 14px;
+            background-color: #f6e05e;
+            border: 1px solid #a0aec0;
+            border-radius: 2px;
+        }
+
+        .card-red {
+            display: inline-block;
+            width: 10px;
+            height: 14px;
+            background-color: #e53e3e;
+            border: 1px solid #718096;
+            border-radius: 2px;
+        }
+
+        .team-average-rating {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .star-player-section {
+            flex-shrink: 0;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s 0.2s ease, transform 0.5s 0.2s ease;
+        }
+
+        .star-player-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .star-player-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: #4a5568;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .star-player-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .star-player-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .star-player-details {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .star-player-name {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .star-player-rating {
+            font-size: 20px;
+            padding: 5px 15px;
+            border-radius: 16px;
+        }
+
+        .star-player-stats {
+            display: flex;
+            gap: 25px;
+            border-left: 2px solid #e2e8f0;
+            padding-left: 30px;
+            margin-left: 10px;
+        }
+
+        .star-player-stats .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+
+        .star-player-stats .stat-item span:first-child {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .star-player-stats .stat-item span:last-child {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div id="player-stats-container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('player-stats-container');
+            const visibilityDocRef = db.collection('podcast').doc('visibility');
+            const playerStatsDataDocRef = db.collection('podcast').doc('playerStatsData');
+            const fixtureDocRef = db.collection('podcast').doc('currentFixture');
+
+            let showStats = false;
+            let currentFixtureDetail = null;
+            let currentStatsData = null;
+
+            function renderGraphic() {
+                if (showStats && currentFixtureDetail && currentStatsData) {
+                    buildGraphic(currentFixtureDetail, currentStatsData);
+                } else {
+                    container.innerHTML = '';
+                }
+            }
+
+            visibilityDocRef.onSnapshot((doc) => {
+                showStats = doc.exists && doc.data().showPlayerStats;
+                renderGraphic();
+            });
+
+            fixtureDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    currentFixtureDetail = doc.data();
+                    renderGraphic();
+                }
+            });
+
+            playerStatsDataDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    currentStatsData = doc.data().stats;
+                    renderGraphic();
+                }
+            });
+
+            function getRatingColorClass(ratingStr) {
+                const r = parseFloat(ratingStr);
+                if (isNaN(r)) return 'rating-neutral';
+                if (r < 6) return 'rating-red';
+                if (r < 7) return 'rating-neutral'; 
+                if (r < 8) return 'rating-green-light';
+                if (r < 9) return 'rating-green-dark';
+                return 'rating-blue';
+            }
+
+            function calculateAverageRating(players) {
+                const playersWithRatings = players.filter(p => p.statistics[0].games.rating && parseFloat(p.statistics[0].games.rating) > 0);
+                if (playersWithRatings.length === 0) return 'N/A';
+                
+                const totalRating = playersWithRatings.reduce((sum, p) => sum + parseFloat(p.statistics[0].games.rating), 0);
+                return (totalRating / playersWithRatings.length).toFixed(1);
+            }
+
+            function findStarPlayer(homePlayers, awayPlayers) {
+                const allPlayers = [...homePlayers, ...awayPlayers];
+                const playersWithRatings = allPlayers.filter(p => p.statistics[0].games.rating && parseFloat(p.statistics[0].games.rating) > 0);
+
+                if (playersWithRatings.length === 0) return null;
+
+                return playersWithRatings.reduce((best, current) => {
+                    return parseFloat(current.statistics[0].games.rating) > parseFloat(best.statistics[0].games.rating) ? current : best;
+                });
+            }
+
+            function buildGraphic(fixtureDetail, playersData) {
+                container.innerHTML = '';
+
+                if (!playersData || playersData.length < 2 || !fixtureDetail) {
+                    container.innerHTML = `<h1>Waiting for complete data...</h1>`;
+                    return;
+                }
+
+                const homeTeamData = playersData.find(t => t.team.id === fixtureDetail.teams.home.id) || playersData[0];
+                const awayTeamData = playersData.find(t => t.team.id === fixtureDetail.teams.away.id) || playersData[1];
+
+                const homeAvgRating = calculateAverageRating(homeTeamData.players);
+                const awayAvgRating = calculateAverageRating(awayTeamData.players);
+                const starPlayer = findStarPlayer(homeTeamData.players, awayTeamData.players);
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'stats-wrapper';
+
+                wrapper.innerHTML = `
+                    <div class="background-logos">
+                        <img src="${fixtureDetail.teams.home.logo}" alt="${fixtureDetail.teams.home.name} Logo">
+                        <img src="${fixtureDetail.teams.away.logo}" alt="${fixtureDetail.teams.away.name} Logo">
+                    </div>
+                `;
+
+                const content = document.createElement('div');
+                content.className = 'stats-content';
+                const fixtureDate = new Date(fixtureDetail.fixture.date);
+                const formattedDate = fixtureDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+                content.innerHTML = `
+                    <div class="top-bar">
+                         <img src="${fixtureDetail.league.logo}" alt="${fixtureDetail.league.name}" class="league-logo">
+                        <div class="fixture-details">
+                            <div class="fixture-name">
+                                <span class="team-name home">${fixtureDetail.teams.home.name}</span>
+                                <span class="scoreline">${fixtureDetail.goals.home} - ${fixtureDetail.goals.away}</span>
+                                <span class="team-name away">${fixtureDetail.teams.away.name}</span>
+                            </div>
+                            <div class="fixture-meta">${formattedDate} | ${fixtureDetail.fixture.venue.name}</div>
+                        </div>
+                    </div>
+                `;
+
+                const tablesArea = document.createElement('div');
+                tablesArea.className = 'tables-area';
+
+                tablesArea.innerHTML = `
+                    <div class="team-table-container">
+                        <div class="team-header">
+                            <img src="${homeTeamData.team.logo}" alt="${homeTeamData.team.name} Logo">
+                            <h3>${homeTeamData.team.name}</h3>
+                        </div>
+                        <table class="player-table">
+                            <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th class="text-center">#</th>
+                                    <th class="text-center">Mins</th>
+                                    <th class="text-center">Rating</th>
+                                    <th class="text-center">Gls</th>
+                                    <th class="text-center">Ast</th>
+                                    <th class="text-center">Shots (On)</th>
+                                    <th class="text-center">KeyP</th>
+                                    <th class="text-center">Tkls</th>
+                                    <th class="text-center">Cards</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${generatePlayerRows(homeTeamData.players)}
+                            </tbody>
+                        </table>
+                        <div class="team-average-rating">
+                            <span>Average Rating</span>
+                            <span class="rating-cell ${getRatingColorClass(homeAvgRating)}">${homeAvgRating}</span>
+                        </div>
+                    </div>
+                    <div class="team-table-container">
+                        <div class="team-header">
+                            <img src="${awayTeamData.team.logo}" alt="${awayTeamData.team.name} Logo">
+                            <h3>${awayTeamData.team.name}</h3>
+                        </div>
+                        <table class="player-table">
+                           <thead>
+                                <tr>
+                                    <th>Player</th>
+                                    <th class="text-center">#</th>
+                                    <th class="text-center">Mins</th>
+                                    <th class="text-center">Rating</th>
+                                    <th class="text-center">Gls</th>
+                                    <th class="text-center">Ast</th>
+                                    <th class="text-center">Shots (On)</th>
+                                    <th class="text-center">KeyP</th>
+                                    <th class="text-center">Tkls</th>
+                                    <th class="text-center">Cards</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${generatePlayerRows(awayTeamData.players)}
+                            </tbody>
+                        </table>
+                        <div class="team-average-rating">
+                            <span>Average Rating</span>
+                            <span class="rating-cell ${getRatingColorClass(awayAvgRating)}">${awayAvgRating}</span>
+                        </div>
+                    </div>
+                `;
+
+                content.appendChild(tablesArea);
+
+                if (starPlayer) {
+                    const spStats = starPlayer.statistics[0];
+                    const spRating = parseFloat(spStats.games.rating).toFixed(1);
+                    // --- MODIFIED: This path now points to your local images folder ---
+                    const localImagePath = `images/players/${starPlayer.player.id}.png`;
+
+                    const starPlayerSection = document.createElement('div');
+                    starPlayerSection.className = 'star-player-section';
+                    starPlayerSection.innerHTML = `
+                        <div class="star-player-title">⭐ Star Player</div>
+                        <div class="star-player-content">
+                            <img src="${localImagePath}" class="star-player-photo" onerror="this.onerror=null;this.src='${starPlayer.player.photo}';">
+                            <div class="star-player-details">
+                                <div class="star-player-name">${starPlayer.player.name}</div>
+                                <div class="star-player-rating rating-cell ${getRatingColorClass(spRating)}">${spRating}</div>
+                            </div>
+                            <div class="star-player-stats">
+                                <div class="stat-item"><span>${spStats.goals.total || 0}</span><span>Goals</span></div>
+                                <div class="stat-item"><span>${spStats.goals.assists || 0}</span><span>Assists</span></div>
+                                <div class="stat-item"><span>${spStats.shots.total || 0}</span><span>Shots</span></div>
+                                <div class="stat-item"><span>${spStats.passes.key || 0}</span><span>Key Passes</span></div>
+                            </div>
+                        </div>
+                    `;
+                    content.appendChild(starPlayerSection);
+                }
+
+                wrapper.appendChild(content);
+                container.appendChild(wrapper);
+                
+                setTimeout(() => {
+                    wrapper.classList.add('visible');
+                    tablesArea.classList.add('visible');
+                    const spSection = container.querySelector('.star-player-section');
+                    if(spSection) spSection.classList.add('visible');
+                }, 100);
+            }
+
+            function generatePlayerRows(players) {
+                let rowsHtml = '';
+                players
+                    .filter(p => p.statistics[0].games.minutes)
+                    .sort((a, b) => b.statistics[0].games.minutes - a.statistics[0].games.minutes)
+                    .slice(0, 16) 
+                    .forEach(p => {
+                        const stats = p.statistics[0];
+                        const rating = stats.games.rating ? parseFloat(stats.games.rating).toFixed(1) : '-';
+                        
+                        const ratingClass = getRatingColorClass(rating);
+
+                        let cardDisplay = '-';
+                        if (stats.cards.yellow > 0) cardDisplay = '<span class="card-yellow"></span>';
+                        if (stats.cards.red > 0) cardDisplay = (cardDisplay !== '-') ? `${cardDisplay} <span class="card-red"></span>` : '<span class="card-red"></span>';
+
+                        rowsHtml += `
+                            <tr>
+                                <td>${p.player.name}</td>
+                                <td class="text-center">${stats.games.number || '-'}</td>
+                                <td class="text-center">${stats.games.minutes || '-'}</td>
+                                <td class="text-center"><span class="rating-cell ${ratingClass}">${rating}</span></td>
+                                <td class="text-center">${stats.goals.total || 0}</td>
+                                <td class="text-center">${stats.goals.assists || 0}</td>
+                                <td class="text-center">${stats.shots.total || 0} (${stats.shots.on || 0})</td>
+                                <td class="text-center">${stats.passes.key || 0}</td>
+                                <td class="text-center">${stats.tackles.total || 0}</td>
+                                <td class="text-center">${cardDisplay}</td>
+                            </tr>
+                        `;
+                    });
+                return rowsHtml;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>League Events Ticker</title>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <link rel="stylesheet" href="ticker_style.css">
+</head>
+<body>
+    <div id="ticker-container-wrapper">
+        </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const wrapper = document.getElementById('ticker-container-wrapper');
+            const leagueEventsDocRef = db.collection('scoreboard').doc('leagueEvents');
+            const leagueEventsDataDocRef = db.collection('scoreboard').doc('leagueEventsData');
+            
+            let displayedEventIds = new Set();
+            const MAX_EVENTS = 5; // Max events to show at once
+
+            leagueEventsDocRef.onSnapshot((doc) => {
+                if (doc.exists && doc.data().show) {
+                    if (!document.getElementById('ticker-container')) {
+                        wrapper.innerHTML = `
+                            <div class="ticker-container" id="ticker-container">
+                                <div class="ticker-header">
+                                    <h1>League Events</h1>
+                                </div>
+                                <div class="events-list-viewport" id="events-list"></div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    wrapper.innerHTML = '';
+                    displayedEventIds.clear();
+                }
+            });
+
+            leagueEventsDataDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    updateTicker(doc.data().events);
+                }
+            });
+
+            function typewriterEffect(element, text, speed = 30) {
+                let i = 0;
+                element.textContent = '';
+                const typing = setInterval(() => {
+                    if (i < text.length) {
+                        element.textContent += text.charAt(i);
+                        i++;
+                    } else {
+                        clearInterval(typing);
+                    }
+                }, speed);
+            }
+            
+            function getIconForEvent(event) {
+                if (event.type === 'Goal') return '⚽';
+                if (event.type === 'Card') return event.detail === 'Yellow Card' ? '🟨' : '🟥';
+                return 'ℹ️';
+            }
+
+            function updateTicker(events) {
+                const eventsList = document.getElementById('events-list');
+                if (!events || !eventsList) return;
+                
+                // --- MODIFICATION START ---
+                // REASON: Applying the same filtering and sorting logic as the match events ticker.
+                // This prevents duplicate events from null names and ensures the list is always correctly sorted by time.
+                const sortedEvents = events
+                    .filter(event => event.player && event.player.name && event.team && event.team.name)
+                    .sort((a, b) => {
+                        if (b.time.elapsed !== a.time.elapsed) {
+                            return b.time.elapsed - a.time.elapsed;
+                        }
+                        const extraA = a.time.extra || 0;
+                        const extraB = b.time.extra || 0;
+                        return extraB - extraA;
+                    });
+                // --- MODIFICATION END ---
+
+                sortedEvents.forEach(event => {
+                    const eventId = `${event.fixtureInfo.fixture.id}-${event.type}-${event.player.id}-${event.time.elapsed}-${event.detail}`;
+                    
+                    if (!displayedEventIds.has(eventId)) {
+                        if (eventsList.firstChild && eventsList.firstChild.className.includes('no-events')) {
+                            eventsList.innerHTML = '';
+                        }
+                        
+                        const item = document.createElement('div');
+                        item.className = 'event-item new-event';
+                        item.dataset.eventId = eventId;
+                        
+                        const eventTime = event.time.extra ? `${event.time.elapsed}+${event.time.extra}` : event.time.elapsed;
+                        const icon = getIconForEvent(event);
+                        const detailText = `${event.player.name} (${event.team.name})`;
+
+                        item.innerHTML = `
+                            <div class="event-time">${eventTime}'</div>
+                            <div class="event-icon">${icon}</div>
+                            <div class="event-details"></div>
+                        `;
+
+                        eventsList.prepend(item);
+                        displayedEventIds.add(eventId);
+                        typewriterEffect(item.querySelector('.event-details'), detailText);
+                        
+                        setTimeout(() => item.classList.remove('new-event'), 500);
+                    }
+                });
+
+                while (eventsList.children.length > MAX_EVENTS) {
+                    const childToRemove = eventsList.lastChild;
+                    displayedEventIds.delete(childToRemove.dataset.eventId);
+                    eventsList.removeChild(childToRemove);
+                }
+                
+                if (eventsList.children.length === 0) {
+                    eventsList.innerHTML = `<div class="no-events">No recent events.</div>`;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

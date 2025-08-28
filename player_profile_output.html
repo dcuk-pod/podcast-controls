@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Profile Output</title>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <script src="firebase-init.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+
+        body {
+            background-color: transparent;
+            font-family: 'Poppins', sans-serif;
+            color: #1a2c2c;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .profile-wrapper-v2 {
+            width: 1520px;
+            height: 300px;
+            background-color: transparent;
+            box-sizing: border-box;
+            position: relative;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .profile-wrapper-v2.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .content-bar-v2 {
+            width: 100%;
+            height: 200px;
+            background-color: #ffffff;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            border-radius: 0px;
+            display: flex;
+            align-items: center;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            box-sizing: border-box;
+            padding-left: 300px; 
+        }
+
+        .player-image-container-v2 {
+            height: 300px;
+            width: 300px;
+            position: absolute;
+            bottom: 0;
+            left: 20px;
+            z-index: 2;
+        }
+
+        .player-photo-v2 {
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(5px 0px 20px rgba(0,0,0,0.25));
+        }
+
+        .player-details-v2 {
+            display: flex;
+            flex-direction: column;
+            width: 400px;
+            flex-shrink: 0;
+        }
+
+        .player-identity-v2 {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-number-v2 {
+            font-size: 44px;
+            font-weight: 800;
+            color: #414448;
+        }
+
+        .player-name-v2 {
+            font-size: 36px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .stats-grid-v2 {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px 20px;
+            padding: 0 40px;
+        }
+
+        .stat-item-v2 {
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .value-v2 {
+            font-size: 26px;
+            font-weight: 600;
+        }
+
+        .label-v2 {
+            font-size: 11px;
+            color: #414448;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .team-logo-v2 {
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 200px;
+            opacity: 0.05;
+            z-index: 0;
+        }
+
+        /* --- NEW: Styles for the color-coded rating --- */
+        .value-v2.rating {
+            padding: 2px 12px;
+            border-radius: 16px;
+            color: white;
+            font-weight: 800;
+            display: inline-block; /* Allows padding and border-radius to work */
+            margin: 0 auto; /* Helps with centering if needed */
+        }
+        .rating-red { background-color: #e74c3c; } /* Red for 0-5.99 */
+        .rating-amber { background-color: #f39c12; color: #1a2c2c; } /* Amber for 6-6.99 */
+        .rating-light-green { background-color: #2ecc71; } /* Light Green for 7-7.99 */
+        .rating-dark-green { background-color: #27ae60; } /* Dark Green for 8-8.99 */
+        .rating-blue { background-color: #3498db; } /* Blue for 9-10 */
+
+    </style>
+</head>
+<body>
+    
+    <div id="player-profile-container">
+        <!-- The profile will be built here by JavaScript -->
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('player-profile-container');
+            const playerProfileDocRef = db.collection('scoreboard').doc('playerProfile');
+
+            playerProfileDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data.show) {
+                        buildProfile(data);
+                    } else {
+                        hideProfile();
+                    }
+                }
+            });
+
+            function hideProfile() {
+                const wrapper = container.querySelector('.profile-wrapper-v2');
+                if (wrapper) {
+                    wrapper.classList.remove('visible');
+                }
+            }
+
+            function buildProfile(data) {
+                container.innerHTML = ''; // Clear previous profile
+
+                const playerInfo = data.player;
+                const stats = data.stats;
+                const team = data.team;
+                
+                const localImagePath = `images/players/${playerInfo.id}.png`;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'profile-wrapper-v2';
+
+                wrapper.innerHTML = `
+                    <div class="player-image-container-v2">
+                        <img src="${localImagePath}" 
+                             onerror="this.onerror=null; this.src='${playerInfo.photo}';" 
+                             alt="${playerInfo.name}" 
+                             class="player-photo-v2">
+                    </div>
+
+                    <div class="content-bar-v2">
+                        <div class="player-details-v2">
+                            <div class="player-identity-v2">
+                                <span class="player-number-v2">#${stats.games.number || '-'}</span>
+                                <h1 class="player-name-v2">${playerInfo.name}</h1>
+                            </div>
+                        </div>
+
+                        <div class="stats-grid-v2">
+                            ${generateStatsGrid(stats)}
+                        </div>
+
+                        <img src="${team.logo}" class="team-logo-v2" alt="${team.name} Logo">
+                    </div>
+                `;
+                
+                container.appendChild(wrapper);
+
+                setTimeout(() => wrapper.classList.add('visible'), 100);
+            }
+
+            function generateStatsGrid(stat) {
+                if (!stat) return '';
+                
+                let statsHTML = '';
+                statsHTML += createStatItem('Rating', stat.games.rating);
+                statsHTML += createStatItem('Minutes', stat.games.minutes);
+                statsHTML += createStatItem('Goals', stat.goals.total);
+                statsHTML += createStatItem('Assists', stat.goals.assists);
+                statsHTML += createStatItem('Total Shots', stat.shots.total);
+                statsHTML += createStatItem('Shots on Target', stat.shots.on);
+                statsHTML += createStatItem('Key Passes', stat.passes.key);
+                statsHTML += createStatItem('Tackles', stat.tackles.total);
+                statsHTML += createStatItem('Duels Won', stat.duels.won);
+                statsHTML += createStatItem('Yellow Cards', stat.cards.yellow);
+                
+                return statsHTML;
+            }
+
+            // --- NEW: Helper function to determine rating color ---
+            // This function takes the rating and returns the correct CSS class based on your criteria.
+            function getRatingColorClass(ratingStr) {
+                const rating = parseFloat(ratingStr);
+                if (isNaN(rating)) return ''; // Return no class if the rating isn't a number
+                if (rating < 6) return 'rating-red';
+                if (rating < 7) return 'rating-amber';
+                if (rating < 8) return 'rating-light-green';
+                if (rating < 9) return 'rating-dark-green';
+                return 'rating-blue';
+            }
+
+            // --- UPDATED: createStatItem now handles rating colors ---
+            function createStatItem(label, value) {
+                const displayValue = (value !== null && value !== undefined) ? value : '-';
+                let valueClass = 'value-v2';
+
+                // If the stat is 'Rating', we get its color class and add it to the element.
+                if (label === 'Rating') {
+                    const ratingClass = getRatingColorClass(displayValue);
+                    if(ratingClass) {
+                        valueClass += ` rating ${ratingClass}`; // e.g., "value-v2 rating rating-light-green"
+                    }
+                }
+
+                return `
+                    <div class="stat-item-v2">
+                        <span class="${valueClass}">${displayValue}</span>
+                        <span class="label-v2">${label}</span>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

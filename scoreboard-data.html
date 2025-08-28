@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Scoreboard Data Hub</title>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; display: grid; place-content: center; height: 100vh; margin: 0; text-align: center; }
+        div { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; }
+        p { color: #555; }
+        button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Scoreboard Data Hub</h1>
+        <p id="status-text">Fetching latest fixture and lineup data...</p>
+        <button onclick="location.reload()">Refresh Data</button>
+    </div>
+
+    <!-- Firebase is not needed here, as this page only writes to localStorage -->
+    <script src="config.js"></script>
+    <script src="scoreboard-data.js"></script>
+</body>
+</html>
