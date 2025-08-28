@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+
+body {
+    background-color: transparent;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.stats-wrapper {
+    width: 1920px;
+    height: 1080px;
+    background-color: #ffffff;
+    box-sizing: border-box;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.background-logos {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10%;
+    box-sizing: border-box;
+    z-index: 0;
+}
+
+.background-logos img {
+    width: 35%;
+    opacity: 0.08;
+}
+
+.stats-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+    flex-shrink: 0;
+}
+
+.league-logo {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+}
+
+.fixture-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+}
+
+.fixture-name {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    font-weight: 700;
+    font-size: 24px;
+}
+
+.fixture-meta {
+    font-size: 16px;
+    color: #888;
+    margin-top: 5px;
+    text-align: center;
+}
+
+.tables-area {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding-top: 10px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    overflow: hidden;
+}
+
+.tables-area.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.team-table-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.team-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+}
+
+.team-header img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.team-header h3 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* --- REMOVED: Scroll wrapper style is no longer needed --- */
+
+.player-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.player-table th,
+.player-table td {
+    padding: 6px 10px; /* Kept the tighter padding */
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.player-table thead th {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4a5568;
+    text-transform: uppercase;
+    background-color: #f7fafc;
+    /* REMOVED: position: sticky is not needed without scrolling */
+}
+
+.player-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.player-table td {
+    font-size: 10px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.rating-cell {
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 4px 4px;
+    text-align: center;
+    color: white;
+    min-width: 30px;
+    display: inline-block;
+}
+
+.rating-red { background-color: #e53e3e; }
+.rating-neutral { background-color: #a0aec0; color: #1a202c;}
+.rating-green-light { background-color: #68d391; color: #1a202c; }
+.rating-green-dark { background-color: #38a169; }
+.rating-blue { background-color: #4299e1; }
+
+.card-yellow {
+    display: inline-block;
+    width: 10px;
+    height: 14px;
+    background-color: #f6e05e;
+    border: 1px solid #a0aec0;
+    border-radius: 2px;
+}
+
+.card-red {
+    display: inline-block;
+    width: 10px;
+    height: 14px;
+    background-color: #e53e3e;
+    border: 1px solid #718096;
+    border-radius: 2px;
+}
+
+.team-average-rating {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto; /* Pushes this to the bottom of the container */
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    font-weight: 600;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.star-player-section {
+    flex-shrink: 0;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s 0.2s ease, transform 0.5s 0.2s ease;
+}
+
+.star-player-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.star-player-title {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #4a5568;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+}
+
+.star-player-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+}
+
+.star-player-photo {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.star-player-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.star-player-name {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.star-player-rating {
+    font-size: 20px;
+    padding: 5px 15px;
+    border-radius: 16px;
+}
+
+.star-player-stats {
+    display: flex;
+    gap: 25px;
+    border-left: 2px solid #e2e8f0;
+    padding-left: 30px;
+    margin-left: 10px;
+}
+
+.star-player-stats .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+}
+
+.star-player-stats .stat-item span:first-child {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.star-player-stats .stat-item span:last-child {
+    font-size: 12px;
+    color: #718096;
+    text-transform: uppercase;
+}
+
+/* --- REMOVED: Custom scrollbar styles are no longer needed --- */

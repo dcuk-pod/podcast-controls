@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+body {
+    background-color: transparent;
+    font-family: 'Poppins', sans-serif;
+    color: #000000; /* Black text */
+    margin: 0;
+    padding: 0;
+}
+
+.ticker-container {
+    max-width: 960px;
+    max-height: 225px;
+    width: 960px;
+    height: 225px;
+    background-color: #ffffff;
+    
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.ticker-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+.ticker-header h1 {
+    margin: 0;
+    font-size: 18px;
+    text-align: center;
+}
+
+.events-list-viewport {
+    flex-grow: 1;
+    overflow: hidden; /* This is crucial to hide events popping in/out */
+    padding: 0 15px;
+}
+
+.event-item {
+    display: flex;
+    align-items: center;
+    height: 40px; /* Fixed height for each event row */
+    box-sizing: border-box;
+    border-bottom: 1px solid #f0f0f0;
+}
+.event-item:last-child {
+    border-bottom: none;
+}
+
+/* This class triggers the entry animation */
+.event-item.new-event {
+    animation: slide-in 0.5s ease-out forwards;
+}
+
+@keyframes slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+.event-time { font-weight: 700; width: 40px; text-align: center; }
+.event-icon { font-size: 16px; width: 30px; text-align: center; }
+.event-details { font-size: 14px; white-space: nowrap; }
+.player-name { font-weight: 600; }
+.detail-text { font-size: 12px; color: #888; }
+.sub-out { color: #D32F2F; font-size: 12px; }
+.sub-in { color: #388E3C; font-weight: 600; }
+.no-events { text-align: center; padding-top: 50px; font-size: 16px; color: #aaa; }

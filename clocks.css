@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+body {
+    background-color: transparent;
+    font-family: 'Poppins', sans-serif;
+    color: #000000;
+    margin: 0;
+    padding: 0;
+}
+
+.clock-container {
+    background-color: #ffffff;
+  
+    padding: 0 15px; /* Horizontal padding */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between; /* Pushes clocks to the edges */
+    align-items: center;
+    /* --- THESE ARE THE NEW DIMENSIONS --- */
+    width: 400px;
+    height: 55px;
+    box-sizing: border-box; /* Ensures padding is included in the width/height */
+}
+
+.clock {
+    /* This makes the label and time sit side-by-side */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.clock-label {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #888;
+}
+
+.clock-time {
+    /* Font size is reduced to fit the new height */
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}

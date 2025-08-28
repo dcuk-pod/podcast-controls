@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+body {
+    background-color: #ffffff;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    padding: 20px;
+}
+
+/* --- Main Container --- */
+.table-wrapper {
+    background-color: #fdfdfd;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Header Styling --- */
+.table-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #eee;
+}
+
+.league-logo {
+    width: 50px;
+    height: 50px;
+}
+
+.table-title {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+/* --- Table Styling --- */
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 18px;
+}
+
+.standings-table th,
+.standings-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.standings-table th {
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    font-size: 24px;
+}
+
+/* --- Alignment --- */
+.standings-table .pos,
+.standings-table .team {
+    text-align: left;
+}
+
+.standings-table th:not(:nth-child(1)):not(:nth-child(2)),
+.standings-table td:not(:nth-child(1)):not(:nth-child(2)) {
+    text-align: center;
+}
+
+/* --- Team Cell Styling --- */
+.team-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.team-logo {
+    width: 24px;
+    height: 24px;
+}
+
+.team-name {
+    font-weight: 600;
+    /* --- THIS IS THE MODIFIED LINE --- */
+    /* This adds a thin, black outline to the text */
+    -webkit-text-stroke: 0.7px black;
+}
+
+/* --- Form Ticker Styling --- */
+.form-ticker span {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 50%;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    margin: 0 1px;
+}
+.form-W { background-color: #4CAF50; } /* Green for Win */
+.form-D { background-color: #FFC107; } /* Amber for Draw */
+.form-L { background-color: #F44336; } /* Red for Loss */
+
+/* --- Row Coloring --- */
+.rank-1 {
+    background-color: #e3f2fd; /* Light Blue */
+    border-left: 4px solid #2196F3;
+}
+.rank-2-7 {
+    background-color: #e8f5e9; /* Light Green */
+    border-left: 4px solid #4CAF50;
+}
+.rank-8-9 {
+    background-color: #fff3e0; /* Light Orange */
+    border-left: 4px solid #FF9800;
+}

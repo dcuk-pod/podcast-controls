@@ -1,0 +1,134 @@
+/* --- Global & Fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* --- CONTROL PANEL STYLES --- */
+.control-panel-wrapper { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; padding-bottom: 15px; margin-bottom: 20px; }
+.panel-header h1 { margin: 0; font-size: 24px; }
+.status-light { width: 15px; height: 15px; background-color: #e74c3c; border-radius: 50%; transition: background-color 0.3s; }
+.status-light.connected { background-color: #2ecc71; }
+.control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+.control-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; }
+.card-title { margin-top: 0; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+.score-controls { display: flex; flex-direction: column; gap: 15px; }
+.team-control { display: flex; justify-content: space-between; align-items: center; }
+.team-info { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.team-logo-small { width: 30px; height: 30px; object-fit: contain; }
+.score-buttons { display: flex; align-items: center; gap: 10px; }
+.score-display { font-size: 20px; font-weight: 700; min-width: 30px; text-align: center; }
+.clock-controls, .period-controls, .stoppage-time-controls, .event-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.period-controls, .stoppage-time-controls { margin-top: 15px; }
+.event-controls { flex-direction: column; align-items: stretch; }
+.event-controls > div { display: flex; gap: 10px; width: 100%;}
+.event-controls select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; flex-grow: 1; }
+.event-controls button { margin-top: 10px; }
+.hidden { display: none !important; }
+.sub-select { width: 50%; }
+button { padding: 8px 15px; border: none; background-color: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: 700; transition: background-color 0.2s; }
+button:hover { background-color: #2980b9; }
+input[type="number"] { width: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; text-align: center; font-size: 16px; }
+
+/* --- OUTPUT GRAPHIC STYLES --- */
+body.output { background-color: transparent; padding: 0; overflow: hidden; }
+.scoreboard-container { position: absolute; top: 20px; left: 20px; }
+.scoreboard-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: rgb(255, 255, 255);
+    padding: 5px;
+    border-radius: 0px;
+    color: rgb(0, 0, 0);
+    font-weight: 900;
+    font-size: 28px;
+    text-transform: uppercase;
+    /* --- NEW --- */
+    /* 1. Establish a stacking context for the main scoreboard */
+    position: relative;
+    /* 2. Give it a higher stack order number (2 is higher than 1) */
+    z-index: 2;
+}
+.team-display { display: flex; align-items: center; gap: 10px; padding: 5px 10px; border-radius: 0px; }
+.team-logo-output { width: 40px; height: 40px; object-fit: contain; }
+.team-initials { min-width: 50px; text-align: center; color: #ffffff; font-weight: 300; }
+.score-box { background-color: #ffffff; padding: 5px 15px; border-radius: 0px; display: flex; gap: 10px; }
+.score-box .flash { animation: score-flash 0.5s ease; }
+.time-box { background-color: #ffffff; padding: 5px 15px; border-radius: 0px; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 10px; font-weight: 300; }
+.stoppage-box { background-color: #000000; color: white; padding: 5px 15px; border-radius: 0px; display: none; }
+.stoppage-box.visible { display: block; }
+
+.period-text {
+    font-size: 22px;
+    font-weight: 400;
+    color: #f10f0f;
+    display: none;
+}
+
+/* --- Event Dropdown Styles --- */
+.event-dropdown {
+    display: flex;
+    padding: 0;
+    border-radius: 0 0 0px 0px;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-100%);
+    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+    /* --- NEW --- */
+    /* 1. Establish a stacking context for the dropdown */
+    position: relative;
+    /* 2. Give it a lower stack order number, so it appears behind elements with a z-index of 2 or higher */
+    z-index: 1;
+}
+.event-dropdown.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.event-view {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 10px 15px;
+    box-sizing: border-box;
+}
+
+#event-flash-view {
+    justify-content: center;
+}
+#event-flash-text {
+    font-weight: 900;
+    font-size: 32px;
+    text-transform: uppercase;
+}
+
+#event-detail-view {
+    background-color: rgb(255, 255, 255);
+    color: rgb(0, 0, 0);
+    gap: 15px;
+}
+
+.event-logo { width: 40px; height: 40px; object-fit: contain; }
+#event-details { text-align: left; flex-grow: 1; }
+#event-title { font-weight: 900; font-size: 22px; text-transform: uppercase; }
+#event-player-details { font-size: 18px; opacity: 0.9; }
+.sub-on { color: #2ecc71; margin-right: 15px; }
+.sub-off { color: #e74c3c; }
+.event-card-icon { margin-left: auto; }
+.card { width: 25px; height: 35px; border-radius: 4px; border: 2px solid rgba(0,0,0,0.3); }
+.card.yellow { background-color: #f1c40f; }
+.card.red { background-color: #e74c3c; }
+
+/* --- ANIMATIONS --- */
+@keyframes score-flash {
+    0% { background-color: #f1c40f; color: black; }
+    100% { background-color: #ffffff; color: black; }
+}

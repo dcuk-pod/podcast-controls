@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+body {
+    background-color: transparent;
+    font-family: 'Poppins', sans-serif;
+    color: #333; /* Dark text for a light background */
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* The main container and animation */
+.ticker-wrapper {
+    max-width: 960px;
+    height: 244px;
+    background-color: #fff;
+    border-radius: 0px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.ticker-content {
+    display: inline-block;
+    height: 100%;
+    /* The duration will be set by the JavaScript for a consistent speed */
+    animation-name: scroll-left;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+
+@keyframes scroll-left {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); } /* Move by half the width for the seamless loop */
+}
+
+/* Stop animation on hover */
+.ticker-wrapper:hover .ticker-content {
+    animation-play-state: paused;
+}
+
+/* Styling for each individual fixture item in the ticker */
+.fixture-item {
+    display: inline-flex; /* Use inline-flex to align items side-by-side */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 0 30px;
+    box-sizing: border-box;
+    border-right: 1px solid #ddd;
+}
+
+.fixture-date {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+}
+
+.teams-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 5px 0;
+}
+
+.team-logo {
+    width: 32px;
+    height: 32px;
+}
+
+.vs-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #999;
+}
+
+.league-info {
+    font-size: 12px;
+    color: #777;
+}

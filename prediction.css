@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
+
+/* --- Global & Fonts --- */
+body {
+    background-color: transparent;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevents scrollbars on the OBS source */
+}
+
+/* --- Wrapper & Animation --- */
+.preview-wrapper {
+    width: 1920px;
+    height: 1080px;
+    background-color: #f4f6f9; /* A light, neutral background */
+    box-sizing: border-box;
+    padding: 30px; /* Reduced padding for more content space */
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.preview-wrapper.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* --- Top Bar Styling (Unchanged) --- */
+.top-bar { 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+    padding-bottom: 20px; 
+    border-bottom: 2px solid #e0e0e0; 
+    flex-shrink: 0; 
+}
+.league-logo { 
+    width: 70px; /* Slightly smaller */
+    height: 70px; 
+    object-fit: contain; 
+}
+.header-details { 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+}
+.fixture-name { 
+    font-size: 30px; /* Slightly smaller */
+    font-weight: 700; 
+}
+.fixture-meta { 
+    font-size: 18px; /* Slightly smaller */
+    color: #888; 
+}
+
+/* --- Main Content Layout --- */
+.main-content {
+    flex-grow: 1; /* Allows this to fill the remaining vertical space */
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* The two main columns */
+    gap: 30px;
+    padding-top: 20px;
+    overflow: hidden; /* Crucial to prevent content from spilling */
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Space between sections in a column */
+    overflow: hidden;
+}
+
+/* --- Generic Section Styling --- */
+.section {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    flex-shrink: 0; /* Prevent sections from shrinking weirdly */
+}
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+/* --- Prediction Summary Section --- */
+.prediction-summary .details {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    align-items: center;
+    text-align: center;
+}
+.prediction-item { padding: 0 15px; }
+.prediction-item:not(:last-child) { border-right: 1px solid #eee; }
+.prediction-item .label {
+    font-size: 15px;
+    color: #777;
+    margin-bottom: 5px;
+}
+.prediction-item .value { font-size: 24px; font-weight: 700; }
+.prediction-chances { display: flex; justify-content: space-around; }
+.chance-item .value { font-size: 22px; }
+
+/* --- Team Stats Columns --- */
+.team-stats .team-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+.team-stats .team-header img {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+}
+.team-stats .team-header .team-name {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+}
+.team-stats .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f9f9f9;
+}
+.team-stats .stat-row:last-child { border-bottom: none; }
+.team-stats .stat-row .label { color: #666; }
+.team-stats .stat-row .value { font-weight: 600; }
+
+/* --- H2H Styles --- */
+.h2h-list .match {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 15px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+.h2h-list .match:last-child { border-bottom: none; }
+.h2h-list .match .team-name.home { text-align: right; }
+.h2h-list .match .team-name.away { text-align: left; }
+.h2h-list .winner { font-weight: 700; }
+.h2h-list .score { font-weight: 900; }
+
+/* --- Form Styles --- */
+.form-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.form-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+.form-boxes { display: flex; gap: 8px; }
+.form-box { width: 35px; height: 35px; border-radius: 6px; line-height: 35px; text-align: center; color: white; font-weight: 700; font-size: 14px; }
+.form-W { background-color: #4CAF50; }
+.form-D { background-color: #FFC107; }
+.form-L { background-color: #F44336; }
+
+/* --- Standings Table Styles --- */
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.standings-table thead tr { border-bottom: 2px solid #ddd; }
+.standings-table th {
+    padding: 8px 5px;
+    font-weight: 700;
+    text-align: center;
+    color: #555;
+}
+.standings-table th:nth-child(2) { text-align: left; }
+.standings-table td {
+    padding: 6px 5px;
+    text-align: center;
+    vertical-align: middle;
+}
+.standings-table .team-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    text-align: left;
+}
+.standings-table .team-cell img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+.standings-table .highlight-team {
+    background-color: #f0f8ff;
+    font-weight: 700;
+}

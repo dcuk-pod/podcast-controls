@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+body {
+    background-color: transparent;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    padding: 0; margin: 0;
+}
+
+.ticker-wrapper {
+    width: 1080px;
+    height: 300px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.ticker-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.events-list {
+    height: 100%;
+}
+
+@keyframes pop-down {
+    from {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.event-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+.event-row:last-child {
+    border-bottom: none;
+}
+.event-row.new-event {
+    animation: pop-down 0.5s ease-out forwards;
+}
+
+.event-icon { font-size: 20px; }
+.team-logo { width: 24px; height: 24px; }
+.team-name { font-weight: 600; }
+
+.goal-event .score-line { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 4px; transition: background-color 0.3s; }
+.goal-event .score-line.highlight { background-color: #e8f5e9; }
+.goal-event .scorer-info { margin-left: auto; text-align: right; }
+.scorer-name { font-weight: 700; }
+.event-minute { font-size: 14px; color: #777; }
+
+.card-event .player-name { font-weight: 700; }
+.card-event .team-info { display: flex; align-items: center; gap: 8px; }
+
+/* --- THIS RULE IS UPDATED --- */
+.card-event .event-detail {
+    margin-left: auto;
+    font-weight: 600;
+    display: flex; /* Aligns the card type and minute */
+    align-items: center;
+    gap: 8px;
+}
+
+.no-events { text-align: center; padding: 50px; font-size: 18px; color: #aaa; }

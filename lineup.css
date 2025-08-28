@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+body {
+    background-color: transparent;
+    font-family: 'Poppins', sans-serif;
+    color: #ffffff;
+    padding: 0; margin: 0;
+}
+
+.lineup-graphic {
+    width: 1000px;
+    height: 750px;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 20px;
+    flex-shrink: 0;
+}
+.top-bar-logo { width: 40px; height: 40px; }
+.top-bar-name {
+    font-size: 24px;
+    font-weight: 700;
+    /* --- THIS IS THE ADDED LINE --- */
+    -webkit-text-stroke: 1px black;
+}
+
+.content-wrapper {
+    flex-grow: 1;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+        "pitch starters"
+        "bench bench";
+    gap: 20px;
+}
+
+.pitch-section {
+    grid-area: pitch;
+    display: flex;
+    background-color: #252525;
+    border-radius: 6px;
+}
+
+/* --- THIS SECTION CONTAINS THE LAYOUT ROTATION --- */
+.pitch {
+    flex: 1;
+    display: flex;
+    /* 1. Arrange columns side-by-side */
+    flex-direction: row; 
+    justify-content: space-around;
+    align-items: center;
+    padding: 15px;
+}
+
+/* Renamed from pitch-row to pitch-column for clarity */
+.pitch-column {
+    display: flex;
+    /* 2. Stack players vertically within their column */
+    flex-direction: column; 
+    justify-content: center;
+    align-items: center;
+    gap: 15px; /* This is now the vertical gap between players */
+}
+
+.player-marker { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.player-photo { width: 45px; height: 45px; border-radius: 50%; background-color: #444; border: 2px solid #ccc; object-fit: cover; margin-bottom: 5px; }
+.player-name { font-size: 13px; font-weight: 600; background-color: rgba(0,0,0,0.7); padding: 2px 5px; border-radius: 3px; white-space: nowrap; }
+
+.list-section.starters { grid-area: starters; }
+.list-section.bench { grid-area: bench; border-top: 1px solid #444; padding-top: 15px; }
+.list-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; color: #aaa; }
+.player-list { list-style: none; padding: 0; margin: 0; }
+.player-list-item { display: flex; font-size: 14px; }
+.player-list-item .number { width: 30px; font-weight: 600; color: #aaa; }
+.player-list-item .name { font-weight: 400; }
+
+.bench .player-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+}

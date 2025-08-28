@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+body {
+    background-color: transparent;
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.lineup-wrapper {
+    width: 1920px;
+    height: 1080px;
+    background-color: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* --- Top Section: Formations --- */
+.formations-section {
+    display: flex;
+    background-color: #38761d;
+    padding: 20px;
+    gap: 20px;
+}
+
+.pitch-container {
+    flex: 1;
+    background-color: rgba(0,0,0,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+/* --- REMOVED: Style for the old formation title is no longer needed --- */
+/*
+.formation-title {
+    color: white;
+    font-weight: 700;
+    text-align: center;
+    padding-bottom: 10px;
+    font-size: 18px;
+}
+*/
+
+.pitch {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    height: 400px; /* Adjusted to fill the space */
+}
+
+.pitch-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px; /* Reduced gap between players vertically */
+}
+
+.player-dot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.player-shirt {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: #ffffff; /* Fallback color */
+    border: 2px solid rgba(255,255,255,0.7);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+.player-number-on-shirt {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+
+.player-name-on-pitch {
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 4px;
+    background-color: rgba(0,0,0,0.5);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+
+/* --- Bottom Section: Player Lists --- */
+.lists-section {
+    display: flex;
+    flex-grow: 1;
+    padding: 30px;
+    gap: 30px;
+}
+
+.team-list-container {
+    flex: 1;
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.team-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #eee;
+}
+
+.team-header-logo {
+    width: 40px;
+    height: 40px;
+}
+
+.team-header-name {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+/* --- NEW: Style for the formation badge in the team header --- */
+.team-formation-badge {
+    margin-left: auto; /* Pushes the badge to the far right */
+    font-size: 16px;
+    font-weight: 600;
+    color: #555;
+    background-color: #e9ecef; /* A light grey background */
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+
+
+.list-heading {
+    font-size: 14px;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    margin: 15px 0 8px 0;
+}
+
+.lists-wrapper {
+    display: flex;
+    gap: 20px;
+    flex-grow: 1;
+}
+.player-list-group {
+    flex: 1;
+}
+
+.player-list {
+    font-size: 15px;
+}
+
+.player-item {
+    display: flex;
+    padding: 4px 0;
+}
+
+.player-item .number {
+    width: 40px;
+    color: #888;
+}

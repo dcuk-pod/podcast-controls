@@ -1,0 +1,177 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+
+body {
+    background-color: transparent;
+    font-family: 'Poppins', sans-serif;
+    color: #1a202c;
+    margin: 0;
+    padding: 0;
+}
+
+.profile-wrapper {
+    width: 1920px;
+    height: 1080px;
+    background-color: #f7fafc;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.background-logo {
+    position: absolute;
+    right: -100px;
+    bottom: -120px;
+    width: 700px;
+    height: 700px;
+    opacity: 0.04;
+    z-index: 0;
+}
+
+.top-bar {
+    padding: 30px 60px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 2px solid #e2e8f0;
+    position: relative;
+    z-index: 5;
+}
+
+.top-bar .player-number {
+    font-size: 60px;
+    font-weight: 800;
+    color: #cbd5e0;
+}
+
+/* --- NEW: Wrapper for name and bio for better alignment --- */
+.top-bar .player-identity {
+    display: flex;
+    flex-direction: column;
+}
+
+.top-bar .player-name {
+    font-size: 50px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+/* --- MODIFICATION: Styling for the bio in its new top-bar location --- */
+.player-bio {
+    font-size: 20px;
+    color: #718096;
+    margin-top: 5px;
+}
+
+.profile-content {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: 800px 1fr;
+    align-items: center;
+    padding-left: 60px;
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.profile-content.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.player-column {
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.player-image-container {
+    position: absolute;
+    bottom: 0;
+    left: -180px;
+    height: 100%;
+    z-index: 2;
+}
+
+.player-photo {
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(10px 5px 30px rgba(0,0,0,0.3));
+    transform: translateX(-100px);
+    transition: transform 0.8s ease-out;
+}
+.profile-content.visible .player-photo {
+    transform: translateX(0);
+}
+
+/* --- MODIFICATION: Old .player-bio styling at the bottom has been removed --- */
+
+.stats-column {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.stats-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    padding: 30px 40px;
+    width: 100%;
+    max-width: 800px;
+}
+
+.stats-card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 25px;
+}
+
+.stats-card-header img {
+    width: 50px;
+    height: 50px;
+}
+
+.stats-card-header h3 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.stat-item .label {
+    font-size: 14px;
+    color: #a0aec0;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.stat-item .value {
+    font-size: 40px;
+    font-weight: 800;
+    color: #2d3748;
+}
