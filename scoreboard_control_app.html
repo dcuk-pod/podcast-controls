@@ -599,7 +599,7 @@
 
                 // --- Helper function for secure API calls via Netlify ---
                 async function fetchApiProxy(apiPath) {
-                    const response = await fetch(`/.netlify/functions/apiProxy?path=${encodeURIComponent(apiPath)}`);
+                    const response = await fetch(`/.netlify/functions/football-api?path=${encodeURIComponent(apiPath)}`);
                     sessionApiCallCount++; 
                     updateSessionCallCount();
                     if (!response.ok) {
