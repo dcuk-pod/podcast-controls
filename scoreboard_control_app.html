@@ -481,12 +481,9 @@
             </div>
         </div>
     </div>
-
-    <script src="config.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // REASON: This firebaseConfig object contains your project's unique identifiers.
-            // It was taken from your original, working login file.
             const firebaseConfig = {
                 apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
                 authDomain: "scoreboard-control.firebaseapp.com",
@@ -495,16 +492,11 @@
                 messagingSenderId: "438021450087",
                 appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
             };
-
-            // REASON: This line initializes the Firebase app with your config.
-            // It MUST be called before any other Firebase services (like auth or firestore) are used.
-            // This is the key change that should fix your login issue.
             firebase.initializeApp(firebaseConfig);
 
             const auth = firebase.auth();
             const db = firebase.firestore();
 
-            // --- Element References for Login ---
             const loginContainer = document.getElementById('login-container');
             const appContainer = document.getElementById('app-container');
             const loginForm = document.getElementById('login-form');
@@ -543,13 +535,8 @@
             });
 
             function initializeApp() {
-                // All of your original application code is safely inside this function.
-                // It will only be called after a successful login.
-                
-                // --- Firebase and Game State Setup ---
                 const scoreboardDocRef = db.collection('scoreboard').doc('liveState');
                 const scoreboardVisibilityDocRef = db.collection('scoreboard').doc('visibility');
-                // ... (the rest of your original, extensive JS code goes here)
                 const fixtureDocRef = db.collection('scoreboard').doc('currentFixture');
                 const playerProfileDocRef = db.collection('scoreboard').doc('playerProfile');
                 const playerStatsDocRef = db.collection('scoreboard').doc('playerStats');
@@ -577,7 +564,6 @@
                 let sessionApiCallCount = 0;
                 let loadedSeasonPlayerData = null;
 
-                // --- Element References ---
                 const statusText = document.getElementById('status-text');
                 const homeScoreDisplay = document.getElementById('home-score-display');
                 const awayScoreDisplay = document.getElementById('away-score-display');
@@ -592,55 +578,55 @@
                 const playerOffSelect = document.getElementById('player-off-select');
                 const playerOnSelect = document.getElementById('player-on-select');
                 const varTeamSelect = document.getElementById('var-team-select');
-                
                 const yearSelect = document.getElementById('year-select');
                 const getFixturesBtn = document.getElementById('get-fixtures-btn');
                 const fixtureSelect = document.getElementById('fixture-select');
                 const loadFixtureBtn = document.getElementById('load-fixture-btn');
                 const fixtureHeader = document.getElementById('fixture-header');
                 const fixtureContainer = document.querySelector('.fixture-container');
-                
                 const playerProfileSelect = document.getElementById('player-profile-select');
                 const showPlayerBtn = document.getElementById('show-player-btn');
-
                 const pollingToggle = document.getElementById('polling-toggle');
                 const sessionApiCallsSpan = document.getElementById('session-api-calls');
                 const dailyApiCallsSpan = document.getElementById('daily-api-calls');
-                
                 const playerProfileSeasonSelect = document.getElementById('player-profile-season-select');
                 const loadPlayerSeasonBtn = document.getElementById('load-player-season-btn');
                 const showPlayerSeasonBtn = document.getElementById('show-player-season-btn');
-
                 const loadPredictionBtn = document.getElementById('load-prediction-btn');
                 
                 const DC_UNITED_TEAM_ID = 1615;
                 const MLS_LEAGUE_ID = 253;
 
-                // --- Toggle for collapsible section ---
-                fixtureHeader.addEventListener('click', () => {
-                    fixtureContainer.classList.toggle('collapsed');
-                });
-
-                // --- API Status Functions ---
-                async function fetchApiStatus() {
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/status`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } });
-                        const data = await response.json();
-                        if (data.response && data.response.requests) {
-                            dailyApiCallsSpan.textContent = `${data.response.requests.current} / ${data.response.requests.limit_day}`;
-                        }
-                        updateSessionCallCount();
-                    } catch (err) {
-                        console.error("Error fetching API status:", err);
-                        dailyApiCallsSpan.textContent = 'Error';
+                // --- Helper function for secure API calls via Netlify ---
+                async function fetchApiProxy(apiPath) {
+                    const response = await fetch(`/.netlify/functions/apiProxy?path=${encodeURIComponent(apiPath)}`);
+                    sessionApiCallCount++; 
+                    updateSessionCallCount();
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `API Proxy Error: ${response.status}`);
                     }
+                    return response.json();
                 }
 
                 function updateSessionCallCount() {
                     sessionApiCallsSpan.textContent = sessionApiCallCount;
                 }
 
-                // --- Fixture Retrieval and Caching Logic ---
+                fixtureHeader.addEventListener('click', () => fixtureContainer.classList.toggle('collapsed'));
+
+                async function fetchApiStatus() {
+                    try {
+                        const data = await fetchApiProxy('/status');
+                        if (data.response && data.response.requests) {
+                            dailyApiCallsSpan.textContent = `${data.response.requests.current} / ${data.response.requests.limit_day}`;
+                        }
+                    } catch (err) {
+                        console.error("Error fetching API status:", err);
+                        dailyApiCallsSpan.textContent = 'Error';
+                    }
+                }
+
                 async function getFixturesForYear() {
                     const year = yearSelect.value;
                     statusText.textContent = `Checking for saved fixtures for ${year}...`;
@@ -652,9 +638,7 @@
                             populateFixtureSelect(doc.data().fixtures);
                         } else {
                             statusText.textContent = `Fetching fixtures for ${year} from API...`;
-                            const response = await fetch(`${API_BASE_URL}/fixtures?season=${year}&team=${DC_UNITED_TEAM_ID}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } });
-                            sessionApiCallCount++; updateSessionCallCount();
-                            const data = await response.json();
+                            const data = await fetchApiProxy(`/fixtures?season=${year}&team=${DC_UNITED_TEAM_ID}`);
                             if (!data.response || data.response.length === 0) throw new Error(`No fixtures found for ${year}.`);
                             const fixtures = data.response.map(f => ({
                                 id: f.fixture.id,
@@ -697,7 +681,6 @@
                     }
                 }
 
-                // --- Main Data Loading & Polling Control ---
                 async function loadLineupData() {
                     stopPolling();
                     const fixtureId = fixtureSelect.value;
@@ -707,14 +690,12 @@
                         return;
                     }
                     await fetchAllData(fixtureId);
-                    if (pollingToggle.checked) {
-                        startPolling(fixtureId);
-                    }
+                    if (pollingToggle.checked) startPolling(fixtureId);
                 }
 
                 function startPolling(fixtureId) {
                     if (statsPollingInterval) clearInterval(statsPollingInterval);
-                    statsPollingInterval = setInterval(() => pollStatsData(fixtureId), 60000); // 60000ms = 1 minute
+                    statsPollingInterval = setInterval(() => pollStatsData(fixtureId), 60000);
                     console.log(`Started polling for fixture ${fixtureId} every 60 seconds.`);
                     statusText.textContent = `Live polling enabled.`;
                 }
@@ -739,49 +720,33 @@
                 async function pollStatsData(fixtureId) {
                     console.log(`Polling for updated stats for fixture ${fixtureId}...`);
                     try {
-                        const [playerStatsRes, matchStatsRes, liveFixturesRes, eventsRes] = await Promise.all([
-                            fetch(`${API_BASE_URL}/fixtures/players?fixture=${fixtureId}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
-                            fetch(`${API_BASE_URL}/fixtures/statistics?fixture=${fixtureId}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
-                            fetch(`${API_BASE_URL}/fixtures?live=all`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
-                            fetch(`${API_BASE_URL}/fixtures/events?fixture=${fixtureId}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } })
+                        const [playerStatsData, matchStatsData, liveFixturesData, eventsData] = await Promise.all([
+                            fetchApiProxy(`/fixtures/players?fixture=${fixtureId}`),
+                            fetchApiProxy(`/fixtures/statistics?fixture=${fixtureId}`),
+                            fetchApiProxy(`/fixtures?live=all`),
+                            fetchApiProxy(`/fixtures/events?fixture=${fixtureId}`)
                         ]);
-                        sessionApiCallCount += 4; updateSessionCallCount();
-
-                        const playerStatsData = await playerStatsRes.json();
-                        const matchStatsData = await matchStatsRes.json();
-                        const liveFixturesData = await liveFixturesRes.json();
-                        const eventsData = await eventsRes.json();
                         
                         fixturePlayerStats = playerStatsData.response || [];
                         await playerStatsDataDocRef.set({ stats: fixturePlayerStats });
-                                            
                         let matchStatsDetails = matchStatsData.response || [];
                         await matchStatsDataDocRef.set({ stats: matchStatsDetails });
-                        
                         let liveFixtures = liveFixturesData.response || [];
                         const mlsLiveFixtures = liveFixtures.filter(f => f.league.id === MLS_LEAGUE_ID);
                         await scrollerDataDocRef.set({ liveFixtures: mlsLiveFixtures });
-                        
                         let matchEvents = eventsData.response || [];
                         await matchEventsDataDocRef.set({ events: matchEvents });
-
                         let leagueEvents = [];
                         if (mlsLiveFixtures.length > 0) {
                             mlsLiveFixtures.forEach(f => {
-                                if(f.events) {
-                                    f.events.forEach(e => {
-                                        leagueEvents.push({...e, fixtureInfo: f});
-                                    });
-                                }
+                                if(f.events) f.events.forEach(e => leagueEvents.push({...e, fixtureInfo: f}));
                             });
                         }
                         await leagueEventsDataDocRef.set({ events: leagueEvents });
 
-
                         console.log("Live stats updated in Firestore.");
                         statusText.textContent = `Stats updated at ${new Date().toLocaleTimeString()}`;
                         fetchApiStatus();
-
                     } catch (err) {
                         console.error("Error polling for stats:", err);
                     }
@@ -791,34 +756,24 @@
                     statusText.textContent = "Fetching all fixture data...";
                     statusText.style.color = '#555';
                     try {
-                        const [fixtureRes, lineupsRes, playerStatsRes, matchStatsRes, liveFixturesRes, eventsRes] = await Promise.all([
-                            fetch(`${API_BASE_URL}/fixtures?id=${fixtureId}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
-                            fetch(`${API_BASE_URL}/fixtures/lineups?fixture=${fixtureId}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
-                            fetch(`${API_BASE_URL}/fixtures/players?fixture=${fixtureId}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
-                            fetch(`${API_BASE_URL}/fixtures/statistics?fixture=${fixtureId}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
-                            fetch(`${API_BASE_URL}/fixtures?live=all`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
-                            fetch(`${API_BASE_URL}/fixtures/events?fixture=${fixtureId}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } })
+                        const [fixtureData, lineupsData, playerStatsData, matchStatsData, liveFixturesData, eventsData] = await Promise.all([
+                            fetchApiProxy(`/fixtures?id=${fixtureId}`),
+                            fetchApiProxy(`/fixtures/lineups?fixture=${fixtureId}`),
+                            fetchApiProxy(`/fixtures/players?fixture=${fixtureId}`),
+                            fetchApiProxy(`/fixtures/statistics?fixture=${fixtureId}`),
+                            fetchApiProxy(`/fixtures?live=all`),
+                            fetchApiProxy(`/fixtures/events?fixture=${fixtureId}`)
                         ]);
-                        sessionApiCallCount += 6; updateSessionCallCount();
-
-                        const fixtureData = await fixtureRes.json();
-                        const lineupsData = await lineupsRes.json();
-                        const playerStatsData = await playerStatsRes.json();
-                        const matchStatsData = await matchStatsRes.json();
-                        const liveFixturesData = await liveFixturesRes.json();
-                        const eventsData = await eventsRes.json();
 
                         if (!fixtureData.response || fixtureData.response.length === 0) throw new Error("Fixture data not found.");
                         
                         const fixtureDetails = fixtureData.response[0];
                         currentFixture = fixtureDetails;
-                        const homeId = fixtureDetails.teams.home.id;
-                        const awayId = fixtureDetails.teams.away.id;
 
                         const fixtureForFirestore = {
                             teams: {
-                                home: { ...fixtureDetails.teams.home, initials: TEAM_INITIALS[homeId] || '???', color: TEAM_COLORS[homeId] || TEAM_COLORS['default'], altColor: TEAM_COLORS_ALT[homeId] || TEAM_COLORS_ALT['default'] },
-                                away: { ...fixtureDetails.teams.away, initials: TEAM_INITIALS[awayId] || '???', color: TEAM_COLORS[awayId] || TEAM_COLORS['default'], altColor: TEAM_COLORS_ALT[awayId] || TEAM_COLORS_ALT['default'] }
+                                home: { ...fixtureDetails.teams.home },
+                                away: { ...fixtureDetails.teams.away }
                             },
                             league: fixtureDetails.league,
                             fixture: fixtureDetails.fixture,
@@ -828,35 +783,25 @@
                         
                         currentLineups = lineupsData.response || [];
                         fixturePlayerStats = playerStatsData.response || [];
-
                         await playerStatsDataDocRef.set({ stats: fixturePlayerStats });
                         await combinedLineupDataDocRef.set({ lineups: currentLineups });
-                        
                         let matchStatsDetails = matchStatsData.response || [];
                         await matchStatsDataDocRef.set({ stats: matchStatsDetails });
-                        
                         let liveFixtures = liveFixturesData.response || [];
                         const mlsLiveFixtures = liveFixtures.filter(f => f.league.id === MLS_LEAGUE_ID);
                         await scrollerDataDocRef.set({ liveFixtures: mlsLiveFixtures });
-
                         let matchEvents = eventsData.response || [];
                         await matchEventsDataDocRef.set({ events: matchEvents });
-                        
                         let leagueEvents = [];
                         if (mlsLiveFixtures.length > 0) {
                             mlsLiveFixtures.forEach(f => {
-                                if(f.events) {
-                                    f.events.forEach(e => {
-                                        leagueEvents.push({...e, fixtureInfo: f});
-                                    });
-                                }
+                                if(f.events) f.events.forEach(e => leagueEvents.push({...e, fixtureInfo: f}));
                             });
                         }
                         await leagueEventsDataDocRef.set({ events: leagueEvents });
                         
                         let statusMessage = `Successfully loaded: ${fixtureDetails.teams.home.name} vs ${fixtureDetails.teams.away.name}.`;
                         if (currentLineups.length === 0) statusMessage += " (Warning: Lineups not available)";
-                        
                         statusText.textContent = statusMessage;
                         
                         populateControls(fixtureDetails, currentLineups);
@@ -867,7 +812,6 @@
                         saveState();
                         updateDisplays();
                         fetchApiStatus();
-
                     } catch (err) {
                         console.error("SCOREBOARD APP ERROR:", err);
                         statusText.textContent = `Error: ${err.message}`;
@@ -878,15 +822,14 @@
                 getFixturesBtn.addEventListener('click', getFixturesForYear);
                 loadFixtureBtn.addEventListener('click', loadLineupData);
 
-                // --- UI Population Logic ---
                 function populateControls(fixture, lineups) {
                     currentFixture = fixture;
                     [eventPlayerSelect, playerOffSelect, playerOnSelect].forEach(sel => sel.innerHTML = '');
 
                     document.getElementById('home-name-control').textContent = fixture.teams.home.name;
                     document.getElementById('away-name-control').textContent = fixture.teams.away.name;
-                    document.getElementById('home-logo-control').src = `assets/logos/${fixture.teams.home.id}.png`;
-                    document.getElementById('away-logo-control').src = `assets/logos/${fixture.teams.away.id}.png`;
+                    document.getElementById('home-logo-control').src = fixture.teams.home.logo;
+                    document.getElementById('away-logo-control').src = fixture.teams.away.logo;
 
                     varTeamSelect.innerHTML = `<option value="${fixture.teams.home.id}">${fixture.teams.home.name}</option><option value="${fixture.teams.away.id}">${fixture.teams.away.name}</option>`;
 
@@ -937,34 +880,27 @@
                         playerProfileSelect.innerHTML = '<option>Lineups not available</option>';
                         return;
                     }
-
                     const createOptionsForTeam = (teamData) => {
                         const optgroup = document.createElement('optgroup');
                         optgroup.label = teamData.team.name;
-
                         const addPlayerOption = (playerObject) => {
                             const option = document.createElement('option');
                             option.value = playerObject.player.id; 
                             option.textContent = `#${playerObject.player.number} - ${playerObject.player.name}`;
                             optgroup.appendChild(option);
                         };
-
                         teamData.startXI.forEach(addPlayerOption);
-
                         if (teamData.substitutes.length > 0) {
                             const separator = document.createElement('option');
                             separator.disabled = true;
                             separator.textContent = '--- Substitutes ---';
                             optgroup.appendChild(separator);
                         }
-                        
                         teamData.substitutes.forEach(addPlayerOption);
                         playerProfileSelect.appendChild(optgroup);
                     };
-                    
                     const homeTeamData = lineups.find(l => l.team.id === currentFixture.teams.home.id);
                     const awayTeamData = lineups.find(l => l.team.id === currentFixture.teams.away.id);
-
                     if (homeTeamData) createOptionsForTeam(homeTeamData);
                     if (awayTeamData) createOptionsForTeam(awayTeamData);
                 }
@@ -976,40 +912,31 @@
                         playerProfileSeasonSelect.innerHTML = '<option>Lineups not available</option>';
                         return;
                     }
-
                     const createOptionsForTeam = (teamData) => {
                         const optgroup = document.createElement('optgroup');
                         optgroup.label = teamData.team.name;
-
                         const addPlayerOption = (playerObject) => {
                             const option = document.createElement('option');
                             option.value = playerObject.player.id;
                             option.textContent = `#${playerObject.player.number} - ${playerObject.player.name}`;
                             optgroup.appendChild(option);
                         };
-
                         teamData.startXI.forEach(addPlayerOption);
-
                         if (teamData.substitutes.length > 0) {
                             const separator = document.createElement('option');
                             separator.disabled = true;
                             separator.textContent = '--- Substitutes ---';
                             optgroup.appendChild(separator);
                         }
-
                         teamData.substitutes.forEach(addPlayerOption);
-
                         playerProfileSeasonSelect.appendChild(optgroup);
                     };
-                    
                     const homeTeamData = lineups.find(l => l.team.id === currentFixture.teams.home.id);
                     const awayTeamData = lineups.find(l => l.team.id === currentFixture.teams.away.id);
-
                     if (homeTeamData) createOptionsForTeam(homeTeamData);
                     if (awayTeamData) createOptionsForTeam(awayTeamData);
                 }
 
-                // --- Core Scoreboard Logic ---
                 function saveState() {
                     scoreboardDocRef.set(gameState).catch(error => console.error("Error writing to Firestore: ", error));
                 }
@@ -1021,7 +948,6 @@
                     secondsInput.value = gameState.seconds || 0;
                 }
 
-                // --- Event Listeners ---
                 document.getElementById('home-score-up').addEventListener('click', () => { gameState.homeScore++; saveState(); updateDisplays(); });
                 document.getElementById('home-score-down').addEventListener('click', () => { if (gameState.homeScore > 0) gameState.homeScore--; saveState(); updateDisplays(); });
                 document.getElementById('away-score-up').addEventListener('click', () => { gameState.awayScore++; saveState(); updateDisplays(); });
@@ -1089,7 +1015,6 @@
                     }
                     const type = eventTypeSelect.value;
                     let eventData = {};
-
                     if (type === 'sub') {
                         const playerOnOption = playerOnSelect.options[playerOnSelect.selectedIndex];
                         const playerOffOption = playerOffSelect.options[playerOffSelect.selectedIndex];
@@ -1102,22 +1027,15 @@
                         if (!playerOption.value) return;
                         eventData = { player: playerOption.value, teamId: playerOption.dataset.teamId };
                     }
-                    
                     const eventId = new Date().getTime();
                     gameState.event = { type, data: eventData, id: eventId };
-
                     if (type === 'goal') {
                         const scoringTeamId = eventData.teamId;
-                        if (scoringTeamId == currentFixture.teams.home.id) {
-                            gameState.homeScore++;
-                        } else if (scoringTeamId == currentFixture.teams.away.id) {
-                            gameState.awayScore++;
-                        }
+                        if (scoringTeamId == currentFixture.teams.home.id) gameState.homeScore++;
+                        else if (scoringTeamId == currentFixture.teams.away.id) gameState.awayScore++;
                         updateDisplays();
                     }
-                    
                     saveState();
-
                     setTimeout(() => {
                         if (gameState.event && gameState.event.id === eventId) {
                             gameState.event = null;
@@ -1139,27 +1057,19 @@
                         statusText.style.color = 'red';
                         return;
                     }
-
                     try {
                         statusText.textContent = 'Fetching latest player stats...';
-                        const playerStatsRes = await fetch(`${API_BASE_URL}/fixtures/players?fixture=${fixtureId}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } });
-                        sessionApiCallCount++;
-                        updateSessionCallCount();
-                        
-                        const playerStatsData = await playerStatsRes.json();
+                        const playerStatsData = await fetchApiProxy(`/fixtures/players?fixture=${fixtureId}`);
                         fixturePlayerStats = playerStatsData.response || [];
                         statusText.textContent = 'Latest stats fetched. Building profile...';
-                        
                     } catch (err) {
                         console.error("Error fetching latest player stats:", err);
                         statusText.textContent = `Error fetching stats: ${err.message}`;
                         statusText.style.color = 'red';
                     }
-
                     let playerInfo = null;
                     let teamInfo = null;
                     let playerStats = null;
-
                     for (const team of fixturePlayerStats) {
                         const foundPlayer = team.players.find(p => p.player.id == selectedPlayerId);
                         if (foundPlayer) {
@@ -1169,7 +1079,6 @@
                             break;
                         }
                     }
-
                     if (!playerInfo) {
                         for (const lineup of currentLineups) {
                             const allPlayers = [...lineup.startXI, ...lineup.substitutes];
@@ -1180,23 +1089,10 @@
                                 break;
                             }
                         }
-                        
                         if (playerInfo) {
-                            playerStats = {
-                                games: { minutes: null, number: playerInfo.number, position: playerInfo.pos, rating: null, captain: false, substitute: false },
-                                shots: { total: null, on: null },
-                                goals: { total: 0, conceded: 0, assists: null, saves: null },
-                                passes: { total: null, key: null, accuracy: null },
-                                tackles: { total: null, blocks: null, interceptions: null },
-                                duels: { total: null, won: null },
-                                dribbles: { attempts: null, success: null, past: null },
-                                fouls: { drawn: null, committed: null },
-                                cards: { yellow: 0, red: 0 },
-                                penalty: { won: null, commited: null, scored: 0, missed: 0, saved: null }
-                            };
+                            playerStats = { games: { minutes: null, number: playerInfo.number, position: playerInfo.pos, rating: null, captain: false, substitute: false }, shots: { total: null, on: null }, goals: { total: 0, conceded: 0, assists: null, saves: null }, passes: { total: null, key: null, accuracy: null }, tackles: { total: null, blocks: null, interceptions: null }, duels: { total: null, won: null }, dribbles: { attempts: null, success: null, past: null }, fouls: { drawn: null, committed: null }, cards: { yellow: 0, red: 0 }, penalty: { won: null, commited: null, scored: 0, missed: 0, saved: null } };
                         }
                     }
-
                     if (playerInfo && teamInfo && playerStats) {
                         const dataForFirestore = { show: true, player: playerInfo, stats: playerStats, team: teamInfo };
                         playerProfileDocRef.set(dataForFirestore);
@@ -1215,7 +1111,6 @@
                         const status = toggle.checked ? 'Showing' : 'Hiding';
                         statusText.textContent = `${status} ${toggle.closest('.control-card').querySelector('.card-title').textContent}.`;
                     });
-
                     docRef.onSnapshot((doc) => {
                         if (doc.exists && typeof doc.data().show === 'boolean') {
                             toggle.checked = doc.data().show;
@@ -1241,30 +1136,15 @@
                         statusText.style.color = 'red';
                         return;
                     }
-
                     statusText.textContent = `Loading season data for player...`;
                     statusText.style.color = '#555';
-
                     try {
-                        const response = await fetch(`${API_BASE_URL}/players?id=${selectedPlayerId}&season=${currentFixture.league.season}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } });
-                        sessionApiCallCount++; 
-                        updateSessionCallCount();
-                        fetchApiStatus();
-
-                        const playerData = await response.json();
-                        if (!playerData.response || playerData.response.length === 0) {
-                            throw new Error("Player season data not found from API.");
-                        }
-                        
+                        const playerData = await fetchApiProxy(`/players?id=${selectedPlayerId}&season=${currentFixture.league.season}`);
+                        if (!playerData.response || playerData.response.length === 0) throw new Error("Player season data not found from API.");
                         const rawPlayerData = playerData.response[0];
-                        loadedSeasonPlayerData = {
-                            player: rawPlayerData.player,
-                            statistics: rawPlayerData.statistics
-                        };
-
+                        loadedSeasonPlayerData = { player: rawPlayerData.player, statistics: rawPlayerData.statistics };
                         statusText.textContent = `Loaded data for ${loadedSeasonPlayerData.player.name}. Ready to show.`;
                         statusText.style.color = 'green';
-
                     } catch (err) {
                         console.error("Error fetching player season data:", err);
                         statusText.textContent = `Error: ${err.message}`;
@@ -1280,19 +1160,16 @@
                         statusText.style.color = 'red';
                         return;
                     }
-                    
                     if (!loadedSeasonPlayerData) {
                         statusText.textContent = 'Please click "Load Data" for the selected player first.';
                         statusText.style.color = 'red';
                         return;
                     }
-
                     if (loadedSeasonPlayerData.player.id != selectedPlayerId) {
                         statusText.textContent = `Data for a different player is loaded. Click "Load Data" again.`;
                         statusText.style.color = 'red';
                         return;
                     }
-
                     playerProfileSeasonDocRef.set({ show: true, data: loadedSeasonPlayerData });
                     statusText.textContent = `Showing season profile for ${loadedSeasonPlayerData.player.name}.`;
                     statusText.style.color = '#555';
@@ -1308,20 +1185,11 @@
                     statusText.textContent = "Loading prediction data...";
                     statusText.style.color = '#555';
                     try {
-                        const response = await fetch(`${API_BASE_URL}/predictions?fixture=${fixtureId}`, { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'v3.football.api-sports.io' } });
-                        sessionApiCallCount++;
-                        updateSessionCallCount();
-                        fetchApiStatus();
-
-                        const data = await response.json();
-                        if (!data.response || data.response.length === 0) {
-                            throw new Error("Prediction data not found for this fixture.");
-                        }
-                        
+                        const data = await fetchApiProxy(`/predictions?fixture=${fixtureId}`);
+                        if (!data.response || data.response.length === 0) throw new Error("Prediction data not found for this fixture.");
                         await predictionDataDocRef.set({ data: data.response[0] });
                         statusText.textContent = "Prediction data loaded successfully.";
                         statusText.style.color = 'green';
-
                     } catch (err) {
                         console.error("Error loading prediction data:", err);
                         statusText.textContent = `Error: ${err.message}`;
@@ -1329,7 +1197,6 @@
                     }
                 });
 
-                // --- Initial Load when app starts ---
                 scoreboardDocRef.get().then((doc) => {
                     if (doc.exists) gameState = doc.data();
                     else gameState = { homeScore: 0, awayScore: 0, minutes: 0, seconds: 0, period: '1H', showStoppage: false, event: null };
@@ -1337,8 +1204,7 @@
                     getFixturesForYear();
                     fetchApiStatus();
                 });
-
-            } // --- End of initializeApp function ---
+            }
         });
     </script>
 </body>
