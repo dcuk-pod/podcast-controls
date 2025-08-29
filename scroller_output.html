@@ -5,15 +5,27 @@
     <title>Live Ticker</title>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-    <script src="firebase-init.js"></script>
     <link rel="stylesheet" href="scroller.css">
 </head>
 <body>
     <div id="main-container" class="main-container">
-        </div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- NEW: Firebase config is now embedded directly in the script ---
+            // REASON: This removes the need for an extra file and keeps the overlay self-contained.
+            const firebaseConfig = {
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+  authDomain: "scoreboard-control.firebaseapp.com",
+  projectId: "scoreboard-control",
+  storageBucket: "scoreboard-control.firebasestorage.app",
+  messagingSenderId: "438021450087",
+  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
             const mainContainer = document.getElementById('main-container');
             const scrollerDocRef = db.collection('scoreboard').doc('scroller');
             const scrollerDataDocRef = db.collection('scoreboard').doc('scrollerData');
@@ -102,9 +114,9 @@
                     statsToDisplay.forEach(stat => { statsGridHTML += `<div>${findStat(homeTeamStats, stat.type)}</div><div class="label">${stat.label}</div><div>${findStat(awayTeamStats, stat.type)}</div>`; });
                     
                     // --- MODIFICATION START ---
-                    // REASON: The original code directly used currentFixtureDetail.goals, which can be null before a match starts, causing "null-null".
-                    // This new code finds the latest score from the live fixtures data first.
-                    // If the match isn't live yet, it checks the original fixture data.
+                    // REASON: The original code directly used currentFixtureDetail.goals, which can be null before a match starts, causing a "null - null" display.
+                    // This new code first looks for the score in the most recent `liveFixtures` data.
+                    // If the match isn't live yet, it checks the original fixture data from when it was loaded.
                     // If both are unavailable, it safely defaults the score to 0 using the '??' operator.
                     const liveMatchData = liveFixtures ? liveFixtures.find(f => f.fixture.id === currentFixtureDetail.fixture.id) : null;
                     const homeScore = liveMatchData?.goals?.home ?? currentFixtureDetail.goals?.home ?? 0;
@@ -112,7 +124,7 @@
                     // --- MODIFICATION END ---
                     
                     // --- MODIFICATION START ---
-                    // REASON: The score variables (homeScore, awayScore) are now used here instead of the potentially null values.
+                    // REASON: The safe score variables (homeScore, awayScore) are now used here instead of the potentially null values.
                     matchStatsPanel.innerHTML = `<div class="stats-header"><div class="stats-team home"><img src="${currentFixtureDetail.teams.home.logo}" class="stats-team-logo"><span>${currentFixtureDetail.teams.home.name}</span></div><div class="stats-score">${homeScore} - ${awayScore}</div><div class="stats-team away"><img src="${currentFixtureDetail.teams.away.logo}" class="stats-team-logo"><span>${currentFixtureDetail.teams.away.name}</span></div></div><div class="stats-grid">${statsGridHTML}</div>`;
                     // --- MODIFICATION END ---
                     filmstrip.appendChild(matchStatsPanel);
