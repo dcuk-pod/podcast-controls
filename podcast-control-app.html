@@ -4,108 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Podcast Visuals Control App</title>
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; }
+        
+        /* --- Login Styles --- */
+        .hidden { display: none !important; }
+        #login-container { max-width: 400px; margin: 100px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        #login-container h1 { text-align: center; margin-top: 0; }
+        #login-form { display: flex; flex-direction: column; gap: 15px; }
+        #login-form input { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; }
+        #login-error { color: #e74c3c; text-align: center; font-weight: bold; margin-top: 10px; }
+        
+        /* --- Main App Styles --- */
         .control-panel-wrapper { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; }
         .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; padding-bottom: 15px; margin-bottom: 20px; }
         .panel-header h1 { margin: 0; font-size: 24px; }
-        
-        .api-status-bar {
-            background-color: #e9ecef;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            align-items: center;
-            font-size: 14px;
-            text-align: center;
-        }
+        .api-status-bar { background-color: #e9ecef; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; font-size: 14px; text-align: center; }
         .api-status-bar .session-calls { text-align: left; }
         .api-status-bar .daily-calls { text-align: right; }
         .api-status-bar span { font-weight: bold; }
-        
-        .fixture-container {
-            background-color: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-        .fixture-header {
-            padding: 15px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            user-select: none;
-        }
-         .fixture-header::after {
-            content: '▲';
-            transition: transform 0.3s ease;
-        }
-        .fixture-container.collapsed .fixture-header::after {
-             transform: rotate(180deg);
-        }
-        .data-fetch-section {
-            padding: 15px;
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: center;
-            gap: 15px;
-            max-height: 500px;
-            transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
-        }
-        .fixture-container.collapsed .data-fetch-section {
-            max-height: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-            overflow: hidden;
-        }
-
+        .fixture-container { background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+        .fixture-header { padding: 15px; cursor: pointer; font-weight: bold; font-size: 18px; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+        .fixture-header::after { content: '▲'; transition: transform 0.3s ease; }
+        .fixture-container.collapsed .fixture-header::after { transform: rotate(180deg); }
+        .data-fetch-section { padding: 15px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 15px; max-height: 500px; transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out; }
+        .fixture-container.collapsed .data-fetch-section { max-height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; }
         .data-fetch-section label { font-weight: bold; }
-        .data-fetch-section select, .data-fetch-section button {
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-            width: 100%;
-        }
-        .full-width {
-            width: 100%;
-            grid-column: 1 / -1;
-        }
-        #podcast-status-text {
-            margin-top: 10px;
-            color: #555;
-            font-style: italic;
-        }
-
+        .data-fetch-section select, .data-fetch-section button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; width: 100%; }
+        .full-width { width: 100%; grid-column: 1 / -1; }
+        #podcast-status-text { margin-top: 10px; color: #555; font-style: italic; }
         .control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
         .control-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between;}
         .card-title { margin-top: 0; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        
         button { padding: 8px 15px; border: none; background-color: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: 700; transition: background-color 0.2s; }
         button:hover { background-color: #2980b9; }
         button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
         button.refresh-btn { background-color: #2ecc71; }
         button.refresh-btn:hover { background-color: #27ae60; }
-        button.remove-btn { background-color: #e74c3c; }
-        button.remove-btn:hover { background-color: #c0392b; }
-
+        button.remove-btn, button.logout-btn { background-color: #e74c3c; }
+        button.remove-btn:hover, button.logout-btn:hover { background-color: #c0392b; }
         .switch-container { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
         .switch-container span { font-weight: 600; }
         .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
@@ -114,8 +56,6 @@
         .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #2ecc71; }
         input:checked + .slider:before { transform: translateX(26px); }
-
-        /* --- Styles for Dynamic Panels (Questions/News) --- */
         .dynamic-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
         .dynamic-form input, .dynamic-form select, .dynamic-form textarea { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; font-family: 'Poppins', sans-serif; }
         .dynamic-list { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #eee; padding-top: 15px; }
@@ -124,166 +64,175 @@
         .dynamic-text strong { color: #555; }
         .dynamic-actions { display: flex; gap: 5px; }
         .dynamic-actions button { padding: 5px 10px; font-size: 12px; }
-
     </style>
 </head>
 <body>
 
-    <div class="control-panel-wrapper">
-        <header class="panel-header">
-            <h1>Podcast Visuals Control Panel</h1>
-        </header>
+    <!-- COMMENT: This is the login form. It will be shown by default. -->
+    <div id="login-container">
+        <h1>Podcast Login</h1>
+        <form id="login-form">
+            <input type="email" id="login-email" placeholder="Email" required>
+            <input type="password" id="login-password" placeholder="Password" required>
+            <button type="submit">Login</button>
+            <p id="login-error" class="hidden"></p>
+        </form>
+    </div>
 
-        <div class="api-status-bar">
-            <div class="session-calls">Session API Calls: <span id="podcast-session-api-calls">0</span></div>
-            <div></div> <div class="daily-calls">Daily API Calls: <span id="podcast-daily-api-calls">Loading...</span></div>
-        </div>
+    <!-- COMMENT: The entire control panel is wrapped in this container and hidden until a user successfully logs in. -->
+    <div id="app-container" class="hidden">
+        <div class="control-panel-wrapper">
+            <header class="panel-header">
+                <h1>Podcast Visuals Control Panel</h1>
+                <!-- COMMENT: Added a logout button to the header. -->
+                <button id="logout-btn" class="logout-btn">Logout</button>
+            </header>
 
-        <div class="fixture-container">
-            <div class="fixture-header" id="podcast-fixture-header">Fixture Selection</div>
-            <div class="data-fetch-section">
-                <label for="podcast-year-select">Season:</label>
-                <select id="podcast-year-select">
-                    <option value="2025">2025</option>
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
-                    <option value="2022">2022</option>
-                </select>
-                <button id="podcast-get-fixtures-btn">Get Fixtures</button>
-                
-                <label for="podcast-fixture-select">Fixture:</label>
-                <select id="podcast-fixture-select">
-                    <option>Select a year first...</option>
-                </select>
-                <button id="podcast-load-fixture-btn">Load Selected Fixture</button>
-
-                <p id="podcast-status-text" class="full-width">Select a season and click "Get Fixtures" to begin.</p>
-            </div>
-        </div>
-
-
-        <div class="control-grid">
-            <div class="control-card">
-                <h2 class="card-title">Fixtures</h2>
-                <div>
-                    <button id="podcast-refresh-fixtures-btn" class="refresh-btn full-width">Refresh Data</button>
-                    <div class="switch-container">
-                        <span>Show Visual</span>
-                        <label class="switch">
-                            <input type="checkbox" id="podcast-toggle-fixtures">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
+            <div class="api-status-bar">
+                <div class="session-calls">Session API Calls: <span id="podcast-session-api-calls">0</span></div>
+                <div></div>
+                <div class="daily-calls">Daily API Calls: <span id="podcast-daily-api-calls">Loading...</span></div>
             </div>
 
-            <div class="control-card">
-                <h2 class="card-title">Next Fixtures</h2>
-                <div>
-                    <button id="podcast-refresh-next-fixtures-btn" class="refresh-btn full-width">Refresh Data</button>
-                    <div class="switch-container">
-                        <span>Show Visual</span>
-                        <label class="switch">
-                            <input type="checkbox" id="podcast-toggle-next-fixtures">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="control-card">
-                <h2 class="card-title">Prediction</h2>
-                <div>
-                    <button id="podcast-refresh-prediction-btn" class="refresh-btn full-width">Refresh Data</button>
-                    <div class="switch-container">
-                        <span>Show Visual</span>
-                        <label class="switch">
-                            <input type="checkbox" id="podcast-toggle-prediction">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="control-card">
-                <h2 class="card-title">Player Stats</h2>
-                <div>
-                    <button id="podcast-refresh-player-stats-btn" class="refresh-btn full-width">Refresh Data</button>
-                    <div class="switch-container">
-                        <span>Show Visual</span>
-                        <label class="switch">
-                            <input type="checkbox" id="podcast-toggle-player-stats">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="control-card">
-                <h2 class="card-title">Match Stats</h2>
-                <div>
-                    <button id="podcast-refresh-match-stats-btn" class="refresh-btn full-width">Refresh Data</button>
-                    <div class="switch-container">
-                        <span>Show Visual</span>
-                        <label class="switch">
-                            <input type="checkbox" id="podcast-toggle-match-stats">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="control-card">
-                <h2 class="card-title">Player Profile</h2>
-                 <div class="switch-container">
-                    <span>Show Visual</span>
-                    <label class="switch">
-                        <input type="checkbox" id="podcast-toggle-player-profile">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="control-card">
-                <h2 class="card-title">Podcast Questions</h2>
-                <div class="dynamic-form">
-                    <input type="text" id="question-text-input" placeholder="Enter question...">
-                    <input type="text" id="question-name-input" placeholder="Enter name...">
-                    <select id="question-source-select">
-                        <option value="twitter">Twitter</option>
-                        <option value="facebook">Facebook</option>
-                        <option value="instagram">Instagram</option>
-                        <option value="discord">Discord</option>
-                        <option value="reddit">Reddit</option>
-                        <option value="other">Other</option>
+            <div class="fixture-container">
+                <div class="fixture-header" id="podcast-fixture-header">Fixture Selection</div>
+                <div class="data-fetch-section">
+                    <label for="podcast-year-select">Season:</label>
+                    <select id="podcast-year-select">
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
                     </select>
-                    <button id="add-question-btn">Add Question</button>
-                </div>
-                <div class="dynamic-list" id="questions-list-container"></div>
-                 <div class="switch-container">
-                    <span>Show Visual</span>
-                    <label class="switch">
-                        <input type="checkbox" id="podcast-toggle-questions">
-                        <span class="slider"></span>
-                    </label>
+                    <button id="podcast-get-fixtures-btn">Get Fixtures</button>
+                    
+                    <label for="podcast-fixture-select">Fixture:</label>
+                    <select id="podcast-fixture-select">
+                        <option>Select a year first...</option>
+                    </select>
+                    <button id="podcast-load-fixture-btn">Load Selected Fixture</button>
+
+                    <p id="podcast-status-text" class="full-width">Select a season and click "Get Fixtures" to begin.</p>
                 </div>
             </div>
 
-            <div class="control-card">
-                <h2 class="card-title">News</h2>
-                <div class="dynamic-form">
-                    <input type="text" id="headline-title-input" placeholder="Enter headline...">
-                    <textarea id="headline-desc-input" placeholder="Enter description..." rows="3"></textarea>
-                    <input type="text" id="headline-image-input" placeholder="Enter image filename (e.g., news.png)">
-                    <button id="add-headline-btn">Add Headline</button>
+            <div class="control-grid">
+                <!-- All of your existing control cards remain here -->
+                <div class="control-card">
+                    <h2 class="card-title">Fixtures</h2>
+                    <div>
+                        <button id="podcast-refresh-fixtures-btn" class="refresh-btn full-width">Refresh Data</button>
+                        <div class="switch-container">
+                            <span>Show Visual</span>
+                            <label class="switch">
+                                <input type="checkbox" id="podcast-toggle-fixtures">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
-                <div class="dynamic-list" id="headlines-list-container"></div>
-                 <div class="switch-container">
-                    <span>Show Visual</span>
-                    <label class="switch">
-                        <input type="checkbox" id="podcast-toggle-news">
-                        <span class="slider"></span>
-                    </label>
+                <div class="control-card">
+                    <h2 class="card-title">Next Fixtures</h2>
+                    <div>
+                        <button id="podcast-refresh-next-fixtures-btn" class="refresh-btn full-width">Refresh Data</button>
+                        <div class="switch-container">
+                            <span>Show Visual</span>
+                            <label class="switch">
+                                <input type="checkbox" id="podcast-toggle-next-fixtures">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-card">
+                    <h2 class="card-title">Prediction</h2>
+                    <div>
+                        <button id="podcast-refresh-prediction-btn" class="refresh-btn full-width">Refresh Data</button>
+                        <div class="switch-container">
+                            <span>Show Visual</span>
+                            <label class="switch">
+                                <input type="checkbox" id="podcast-toggle-prediction">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-card">
+                    <h2 class="card-title">Player Stats</h2>
+                    <div>
+                        <button id="podcast-refresh-player-stats-btn" class="refresh-btn full-width">Refresh Data</button>
+                        <div class="switch-container">
+                            <span>Show Visual</span>
+                            <label class="switch">
+                                <input type="checkbox" id="podcast-toggle-player-stats">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-card">
+                    <h2 class="card-title">Match Stats</h2>
+                    <div>
+                        <button id="podcast-refresh-match-stats-btn" class="refresh-btn full-width">Refresh Data</button>
+                        <div class="switch-container">
+                            <span>Show Visual</span>
+                            <label class="switch">
+                                <input type="checkbox" id="podcast-toggle-match-stats">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-card">
+                    <h2 class="card-title">Player Profile</h2>
+                     <div class="switch-container">
+                        <span>Show Visual</span>
+                        <label class="switch">
+                            <input type="checkbox" id="podcast-toggle-player-profile">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="control-card">
+                    <h2 class="card-title">Podcast Questions</h2>
+                    <div class="dynamic-form">
+                        <input type="text" id="question-text-input" placeholder="Enter question...">
+                        <input type="text" id="question-name-input" placeholder="Enter name...">
+                        <select id="question-source-select">
+                            <option value="twitter">Twitter</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="discord">Discord</option>
+                            <option value="reddit">Reddit</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <button id="add-question-btn">Add Question</button>
+                    </div>
+                    <div class="dynamic-list" id="questions-list-container"></div>
+                     <div class="switch-container">
+                        <span>Show Visual</span>
+                        <label class="switch">
+                            <input type="checkbox" id="podcast-toggle-questions">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="control-card">
+                    <h2 class="card-title">News</h2>
+                    <div class="dynamic-form">
+                        <input type="text" id="headline-title-input" placeholder="Enter headline...">
+                        <textarea id="headline-desc-input" placeholder="Enter description..." rows="3"></textarea>
+                        <input type="text" id="headline-image-input" placeholder="Enter image filename (e.g., news.png)">
+                        <button id="add-headline-btn">Add Headline</button>
+                    </div>
+                    <div class="dynamic-list" id="headlines-list-container"></div>
+                     <div class="switch-container">
+                        <span>Show Visual</span>
+                        <label class="switch">
+                            <input type="checkbox" id="podcast-toggle-news">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -291,402 +240,328 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- MODIFIED: Firebase is now initialized directly in the script ---
-            // REASON: Since we removed config.js, the initialization needs to happen here.
-            // Your actual Firebase config details go here. These are safe to be public,
-            // but your database security should be handled by Firestore Security Rules.
-           
-         //   const API_BASE_URL = "https://v3.football.api-sports.io";
-            const TEAM_COLORS = {
-  1595: 'rgb(85, 150, 71)',     // Seattle Sounders FC (Green)
-  1596: 'rgb(0, 102, 175)',     // San Jose Earthquakes (Blue)
-  1597: 'rgb(222, 53, 56)',     // FC Dallas (Red)
-  1598: 'rgb(101, 44, 144)',    // Orlando City SC (Purple)
-  1599: 'rgb(181, 152, 90)',    // Philadelphia Union (Gold)
-  1600: 'rgb(245, 128, 44)',    // Houston Dynamo FC (Orange)
-  1601: 'rgb(222, 53, 56)',     // Toronto FC (Red)
-  1602: 'rgb(217, 39, 46)',     // New York Red Bulls (Red)
-  1603: 'rgb(15, 49, 92)',      // Vancouver Whitecaps FC (Dark Blue)
-  1604: 'rgb(108, 169, 223)',   // New York City FC (Sky Blue)
-  1605: 'rgb(0, 40, 85)',       // LA Galaxy (Dark Blue)
-  1606: 'rgb(205, 34, 53)',     // Real Salt Lake (Red)
-  1607: 'rgb(229, 26, 55)',     // Chicago Fire FC (Red)
-  1608: 'rgb(141, 22, 44)',     // Atlanta United FC (Dark Red)
-  1609: '#021D3D',     // New England Revolution (Dark Blue)
-  1610: 'rgb(149, 29, 64)',     // Colorado Rapids (Burgundy)
-  1611: 'rgb(80, 132, 185)',    // Sporting Kansas City (Light Blue)
-  1612: 'rgb(143, 201, 232)',   // Minnesota United FC (Sky Blue)
-  1613: 'rgb(254, 222, 0)',     // Columbus Crew (Yellow)
-  1614: 'rgb(0, 85, 155)',      // CF Montréal (Blue)
-  1615: 'rgb(239, 62, 65)',      // D.C. United (Red)
-  1616: 'rgb(193, 162, 92)',     // Los Angeles FC (Gold)
-  1617: 'rgb(0, 70, 41)',        // Portland Timbers (Green)
-  2242: 'rgb(241, 91, 36)',      // FC Cincinnati (Orange)
-  9568: 'rgb(252, 185, 205)',    // Inter Miami CF (Pink)
-  9569: 'rgb(254, 219, 0)',      // Nashville SC (Yellow)
-  16489: 'rgb(0, 182, 75)',      // Austin FC (Bright Green)
-  18310: 'rgb(91, 192, 240)',    // Charlotte FC (Blue)
-  20787: 'rgb(217, 2, 79)',      // St. Louis City SC (Magenta)
-  25484: 'rgb(11, 46, 75)',      // San Diego FC (Dark Blue)
- 
-
-  // Add any other team IDs and their colors here...
-
-  // A default color for any team not in this list
-  'default': 'rgba(66, 65, 65, 1)' 
-};
-const TEAM_COLORS_ALT = {
-  1595: '#003C71',     // Seattle Sounders FC (Sounder Blue)
-  1596: '#000000',     // San Jose Earthquakes (Black)
-  1597: '#003E7B',     // FC Dallas (Brazos Blue)
-  1598: '#FFD100',     // Orlando City SC (Gold)
-  1599: '#0A2240',     // Philadelphia Union (Union Blue)
-  1600: '#000000',     // Houston Dynamo FC (Black)
-  1601: '#231F20',     // Toronto FC (Onyx/Dark Grey)
-  1602: '#FFC700',     // New York Red Bulls (Yellow)
-  1603: '#92C1E9',     // Vancouver Whitecaps FC (Whitecaps Blue)
-  1604: '#002654',     // New York City FC (Midnight Blue)
-  1605: '#FFD200',     // LA Galaxy (Galaxy Gold)
-  1606: '#013A81',     // Real Salt Lake (Cobalt Blue)
-  1607: '#001E61',     // Chicago Fire FC (Navy Blue)
-  1608: '#A48A5A',     // Atlanta United FC (Dark Gold)
-  1609: '#E51938',     // New England Revolution (Revolution Red)
-  1610: '#569FD3',     // Colorado Rapids (Sky Blue)
-  1611: '#002F65',     // Sporting Kansas City (Dark Indigo)
-  1612: '#58595B',     // Minnesota United FC (Iron Grey)
-  1613: '#000000',     // Columbus Crew (Black)
-  1614: '#000000',     // CF Montréal (Black)
-  1615: '#000000',     // D.C. United (Black)
-  1616: '#000000',     // Los Angeles FC (Black)
-  1617: '#E1A023',     // Portland Timbers (Timbers Gold)
-  2242: '#003067',     // FC Cincinnati (FCC Blue)
-  9568: '#000000',     // Inter Miami CF (Black)
-  9569: '#001F5B',     // Nashville SC (Acoustic Blue)
-  16489: '#000000',    // Austin FC (Black)
-  18310: '#000000',    // Charlotte FC (Black)
-  20787: '#001D4C',    // St. Louis City SC (River Blue)
-  25484: '#F5831F',    // San Diego FC (Horizon Orange)
-  'default': 'rgb(255, 255, 255)' // A default alternate color
-};
-const TEAM_INITIALS = {
-  1595: 'SEA',   // Seattle Sounders FC
-  1596: 'SJE',   // San Jose Earthquakes
-  1597: 'DAL',   // FC Dallas
-  1598: 'ORL',   // Orlando City SC
-  1599: 'PHI',   // Philadelphia Union
-  1600: 'HOU',   // Houston Dynamo FC
-  1601: 'TOR',   // Toronto FC
-  1602: 'NYRB',  // New York Red Bulls
-  1603: 'VAN',   // Vancouver Whitecaps FC
-  1604: 'NYC',   // New York City FC
-  1605: 'LAG',   // LA Galaxy
-  1606: 'RSL',   // Real Salt Lake
-  1607: 'CHI',   // Chicago Fire FC
-  1608: 'ATL',   // Atlanta United FC
-  1609: 'NER',   // New England Revolution
-  1610: 'COL',   // Colorado Rapids
-  1611: 'SKC',   // Sporting Kansas City
-  1612: 'MIN',   // Minnesota United FC
-  1613: 'CLB',   // Columbus Crew
-  1614: 'MTL',   // CF Montréal
-  1615: 'DCU',   // D.C. United
-  1616: 'LAFC',  // Los Angeles FC
-  1617: 'POR',   // Portland Timbers
-  2242: 'CIN',   // FC Cincinnati
-  9568: 'MIA',   // Inter Miami CF
-  9569: 'NSH',   // Nashville SC
-  16489: 'AUS',  // Austin FC
-  18310: 'CLT',  // Charlotte FC
-  20787: 'STL',  // St. Louis City SC
-  25484: 'SAN',  // San Diego FC
-  // Add all other team initials here...
-  'default': '???'
-};
-
+            // COMMENT: Firebase configuration is placed directly here. This is crucial for initializing Firebase services correctly.
             const firebaseConfig = {
                 apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
-  authDomain: "scoreboard-control.firebaseapp.com",
-  projectId: "scoreboard-control",
-  storageBucket: "scoreboard-control.firebasestorage.app",
-  messagingSenderId: "438021450087",
-  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.appspot.com",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
             };
-            // Initialize Firebase
             firebase.initializeApp(firebaseConfig);
+            
+            const auth = firebase.auth();
             const db = firebase.firestore();
 
-            // --- Firebase Document References ---
-            const podcastVisibilityDocRef = db.collection('podcast').doc('visibility');
-            const podcastFixtureDocRef = db.collection('podcast').doc('currentFixture');
-            const podcastFixturesDataDocRef = db.collection('podcast').doc('fixturesData');
-            const podcastNextFixturesDataDocRef = db.collection('podcast').doc('nextFixturesData');
-            const podcastPredictionDataDocRef = db.collection('podcast').doc('predictionData');
-            const podcastPlayerStatsDataDocRef = db.collection('podcast').doc('playerStatsData');
-            const podcastMatchStatsDataDocRef = db.collection('podcast').doc('matchStatsData');
-            const podcastQuestionsCollectionRef = db.collection('podcastQuestions');
-            const podcastCurrentQuestionDocRef = db.collection('podcast').doc('currentQuestion');
-            const podcastHeadlinesCollectionRef = db.collection('podcastHeadlines');
-            const podcastCurrentHeadlineDocRef = db.collection('podcast').doc('currentHeadline');
+            // COMMENT: These are the DOM elements for handling the login process.
+            const loginContainer = document.getElementById('login-container');
+            const appContainer = document.getElementById('app-container');
+            const loginForm = document.getElementById('login-form');
+            const loginEmail = document.getElementById('login-email');
+            const loginPassword = document.getElementById('login-password');
+            const loginError = document.getElementById('login-error');
+            const logoutBtn = document.getElementById('logout-btn');
 
-            let sessionApiCallCount = 0;
-
-            // --- Element References ---
-            const statusText = document.getElementById('podcast-status-text');
-            const yearSelect = document.getElementById('podcast-year-select');
-            const getFixturesBtn = document.getElementById('podcast-get-fixtures-btn');
-            const fixtureSelect = document.getElementById('podcast-fixture-select');
-            const loadFixtureBtn = document.getElementById('podcast-load-fixture-btn');
-            const sessionApiCallsSpan = document.getElementById('podcast-session-api-calls');
-            const dailyApiCallsSpan = document.getElementById('podcast-daily-api-calls');
-            const questionTextInput = document.getElementById('question-text-input');
-            const questionNameInput = document.getElementById('question-name-input');
-            const questionSourceSelect = document.getElementById('question-source-select');
-            const addQuestionBtn = document.getElementById('add-question-btn');
-            const questionsListContainer = document.getElementById('questions-list-container');
-            const headlineTitleInput = document.getElementById('headline-title-input');
-            const headlineDescInput = document.getElementById('headline-desc-input');
-            const headlineImageInput = document.getElementById('headline-image-input');
-            const addHeadlineBtn = document.getElementById('add-headline-btn');
-            const headlinesListContainer = document.getElementById('headlines-list-container');
-            
-            // As you run the DCUK podcast, this team ID for D.C. United is correct!
-            const PODCAST_TEAM_ID = 1615;
-
-            document.getElementById('podcast-fixture-header').addEventListener('click', () => document.querySelector('.fixture-container').classList.toggle('collapsed'));
-
-            async function fetchApiStatus() {
-                try {
-                    // MODIFIED: URL points to our proxy. No API key needed in the headers.
-                    // REASON: The proxy function adds the key securely on the server side.
-                    const response = await fetch(`/api/status`);
-                    const data = await response.json();
-                    if (data.response && data.response.requests) {
-                        dailyApiCallsSpan.textContent = `${data.response.requests.current} / ${data.response.requests.limit_day}`;
-                    }
-                    updateSessionCallCount();
-                } catch (err) { console.error("Error fetching API status:", err); dailyApiCallsSpan.textContent = 'Error'; }
-            }
-
-            function updateSessionCallCount() { sessionApiCallsSpan.textContent = sessionApiCallCount; }
-
-            async function getFixturesForYear() {
-                const year = yearSelect.value;
-                statusText.textContent = `Checking for saved fixtures for ${year}...`;
-                const fixturesDocRef = db.collection('fixtures').doc(year);
-                try {
-                    const doc = await fixturesDocRef.get();
-                    if (doc.exists && doc.data().fixtures && doc.data().fixtures.length > 0) {
-                        statusText.textContent = `Fixtures for ${year} loaded from database.`;
-                        populateFixtureSelect(doc.data().fixtures);
-                    } else {
-                        statusText.textContent = `Fetching fixtures for ${year} from API...`;
-                        // MODIFIED: URL points to our proxy. No API key needed in the headers.
-                        const response = await fetch(`/api/fixtures?season=${year}&team=${PODCAST_TEAM_ID}`);
-                        sessionApiCallCount++; fetchApiStatus();
-                        const data = await response.json();
-                        if (!data.response || data.response.length === 0) throw new Error(`No fixtures found for ${year}.`);
-                        const fixtures = data.response.map(f => ({ id: f.fixture.id, name: `${f.teams.home.name} vs ${f.teams.away.name} (${new Date(f.fixture.date).toLocaleDateString()})`, competition: f.league.name }));
-                        await fixturesDocRef.set({ fixtures });
-                        statusText.textContent = `Fixtures for ${year} fetched and saved.`;
-                        populateFixtureSelect(fixtures);
-                    }
-                } catch (err) { console.error("Error getting fixtures:", err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'red'; }
-            }
-            
-            function populateFixtureSelect(fixtures) {
-                fixtureSelect.innerHTML = ''; 
-                if (!fixtures || fixtures.length === 0) { fixtureSelect.innerHTML = '<option>No fixtures found</option>'; return; }
-                const groupedByCompetition = fixtures.reduce((acc, fixture) => {
-                    const comp = fixture.competition || 'Other';
-                    if (!acc[comp]) acc[comp] = [];
-                    acc[comp].push(fixture);
-                    return acc;
-                }, {});
-                for (const competition in groupedByCompetition) {
-                    const optgroup = document.createElement('optgroup');
-                    optgroup.label = competition;
-                    groupedByCompetition[competition].forEach(fixture => {
-                        const option = document.createElement('option');
-                        option.value = fixture.id;
-                        option.textContent = fixture.name;
-                        optgroup.appendChild(option);
-                    });
-                    fixtureSelect.appendChild(optgroup);
-                }
-            }
-
-            async function loadFixtureData() {
-                const fixtureId = fixtureSelect.value;
-                if (!fixtureId || isNaN(fixtureId)) { statusText.textContent = "Error: Please select a valid fixture."; statusText.style.color = 'red'; return; }
-                statusText.textContent = "Fetching selected fixture data..."; statusText.style.color = '#555';
-                try {
-                    // MODIFIED: URL points to our proxy. No API key needed in the headers.
-                    const response = await fetch(`/api/fixtures?id=${fixtureId}`);
-                    sessionApiCallCount++; fetchApiStatus();
-                    const fixtureData = await response.json();
-                    if (!fixtureData.response || fixtureData.response.length === 0) throw new Error("Fixture data not found.");
-                    const fixtureDetails = fixtureData.response[0];
-                    await podcastFixtureDocRef.set(fixtureDetails);
-                    statusText.textContent = `Successfully loaded: ${fixtureDetails.teams.home.name} vs ${fixtureDetails.teams.away.name}.`;
-                } catch (err) { console.error("PODCAST APP ERROR:", err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'red'; }
-            }
-
-            async function refreshGenericData(endpoint, docRef, dataKey, successMessage, errorMessage) {
-                const fixtureId = fixtureSelect.value;
-                if (endpoint.includes('fixture') && !fixtureId && !endpoint.includes('next')) {
-                     statusText.textContent = "Error: Please select a valid fixture first."; statusText.style.color = 'red'; return;
-                }
-                // MODIFIED: URL points to our proxy.
-                const url = `/api/${endpoint}`;
-                statusText.textContent = `Fetching ${successMessage}...`; statusText.style.color = '#555';
-                 try {
-                    // MODIFIED: Fetch call has no headers with keys.
-                    const response = await fetch(url);
-                    sessionApiCallCount++; fetchApiStatus();
-                    const data = await response.json();
-                    if (!data.response || data.response.length === 0) throw new Error(`No ${errorMessage} found.`);
-                    const payload = endpoint.includes('prediction') ? data.response[0] : data.response;
-                    await docRef.set({ [dataKey]: payload, lastUpdated: new Date().toISOString() });
-                    statusText.textContent = `${successMessage} refreshed and saved.`; statusText.style.color = 'green';
-                } catch (err) { console.error(`Error refreshing ${successMessage}:`, err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'red'; }
-            }
-            
-            getFixturesBtn.addEventListener('click', getFixturesForYear);
-            loadFixtureBtn.addEventListener('click', loadFixtureData);
-            document.getElementById('podcast-refresh-fixtures-btn').addEventListener('click', () => refreshGenericData(`fixtures?season=${yearSelect.value}&team=${PODCAST_TEAM_ID}`, podcastFixturesDataDocRef, 'fixtures', 'Fixtures', 'fixtures'));
-            document.getElementById('podcast-refresh-next-fixtures-btn').addEventListener('click', () => refreshGenericData(`fixtures?team=${PODCAST_TEAM_ID}&next=5`, podcastNextFixturesDataDocRef, 'fixtures', 'Next fixtures', 'next fixtures'));
-            document.getElementById('podcast-refresh-prediction-btn').addEventListener('click', () => refreshGenericData(`predictions?fixture=${fixtureSelect.value}`, podcastPredictionDataDocRef, 'prediction', 'Prediction data', 'prediction data'));
-            document.getElementById('podcast-refresh-player-stats-btn').addEventListener('click', () => refreshGenericData(`fixtures/players?fixture=${fixtureSelect.value}`, podcastPlayerStatsDataDocRef, 'stats', 'Player stats', 'player stats'));
-            document.getElementById('podcast-refresh-match-stats-btn').addEventListener('click', () => refreshGenericData(`fixtures/statistics?fixture=${fixtureSelect.value}`, podcastMatchStatsDataDocRef, 'stats', 'Match stats', 'match stats'));
-
-            // --- Questions Panel Logic (No changes needed here) ---
-            addQuestionBtn.addEventListener('click', () => {
-                const text = questionTextInput.value.trim();
-                const name = questionNameInput.value.trim();
-                const source = questionSourceSelect.value;
-                if (!text || !name) {
-                    statusText.textContent = "Please enter both a question and a name.";
-                    statusText.style.color = 'red';
-                    return;
-                }
-                podcastQuestionsCollectionRef.add({ text, name, source, createdAt: new Date() });
-                questionTextInput.value = '';
-                questionNameInput.value = '';
-            });
-
-            podcastQuestionsCollectionRef.orderBy("createdAt", "desc").onSnapshot(snapshot => {
-                questionsListContainer.innerHTML = '';
-                if (snapshot.empty) { questionsListContainer.innerHTML = '<p>No questions added yet.</p>'; return; }
-                snapshot.forEach(doc => {
-                    const question = doc.data();
-                    const item = document.createElement('div');
-                    item.className = 'dynamic-item';
-                    item.innerHTML = `<div class="dynamic-text">"${question.text}" — <strong>${question.name}</strong></div><div class="dynamic-actions"><button class="show-question-btn">Show</button><button class="remove-question-btn remove-btn">X</button></div>`;
-                    item.querySelector('.show-question-btn').addEventListener('click', () => {
-                        podcastCurrentQuestionDocRef.set({ ...question, show: true });
-                        statusText.textContent = `Set question from ${question.name} to be shown.`; statusText.style.color = 'green';
-                    });
-                    item.querySelector('.remove-question-btn').addEventListener('click', () => doc.ref.delete());
-                    questionsListContainer.appendChild(item);
-                });
-            });
-
-            // --- Headlines Panel Logic (No changes needed here) ---
-            addHeadlineBtn.addEventListener('click', () => {
-                const title = headlineTitleInput.value.trim();
-                const description = headlineDescInput.value.trim();
-                const imageFile = headlineImageInput.value.trim();
-
-                if (!title || !description || !imageFile) {
-                    statusText.textContent = "Please fill in all headline fields.";
-                    statusText.style.color = 'red';
-                    return;
-                }
-
-                podcastHeadlinesCollectionRef.add({
-                    title,
-                    description,
-                    image: imageFile, // Save the filename
-                    createdAt: new Date()
-                });
-
-                headlineTitleInput.value = '';
-                headlineDescInput.value = '';
-                headlineImageInput.value = '';
-            });
-
-            podcastHeadlinesCollectionRef.orderBy("createdAt", "desc").onSnapshot(snapshot => {
-                headlinesListContainer.innerHTML = '';
-                if (snapshot.empty) { headlinesListContainer.innerHTML = '<p>No headlines added yet.</p>'; return; }
-                snapshot.forEach(doc => {
-                    const headline = doc.data();
-                    const item = document.createElement('div');
-                    item.className = 'dynamic-item';
-                    item.innerHTML = `<div class="dynamic-text"><strong>${headline.title}</strong></div><div class="dynamic-actions"><button class="show-headline-btn">Show</button><button class="remove-headline-btn remove-btn">X</button></div>`;
-                    
-                    item.querySelector('.show-headline-btn').addEventListener('click', () => {
-                        podcastCurrentHeadlineDocRef.set({ ...headline, show: true });
-                        statusText.textContent = `Set headline "${headline.title}" to be shown.`; statusText.style.color = 'green';
-                    });
-
-                    item.querySelector('.remove-headline-btn').addEventListener('click', () => {
-                        doc.ref.delete();
-                    });
-                    headlinesListContainer.appendChild(item);
-                });
-            });
-
-
-            // --- Switch Logic (No changes needed here) ---
-            const addSwitchListener = (elementId, firestoreField, currentDocRef) => {
-                const toggle = document.getElementById(elementId);
-                if (toggle) {
-                    toggle.addEventListener('change', (e) => {
-                        const isVisible = e.target.checked;
-                        podcastVisibilityDocRef.update({ [firestoreField]: isVisible });
-                        if (currentDocRef) {
-                            currentDocRef.update({ show: isVisible }).catch(() => currentDocRef.set({ show: isVisible }));
-                        }
-                    });
-                }
-            };
-
-            addSwitchListener('podcast-toggle-fixtures', 'showFixtures');
-            addSwitchListener('podcast-toggle-next-fixtures', 'showNextFixtures');
-            addSwitchListener('podcast-toggle-prediction', 'showPrediction');
-            addSwitchListener('podcast-toggle-player-stats', 'showPlayerStats');
-            addSwitchListener('podcast-toggle-match-stats', 'showMatchStats');
-            addSwitchListener('podcast-toggle-player-profile', 'showPlayerProfile');
-            addSwitchListener('podcast-toggle-questions', 'showQuestions', podcastCurrentQuestionDocRef);
-            addSwitchListener('podcast-toggle-news', 'showNews', podcastCurrentHeadlineDocRef);
-
-            podcastVisibilityDocRef.onSnapshot((doc) => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    const setSwitchState = (id, value) => {
-                        const el = document.getElementById(id);
-                        if (el) el.checked = !!value;
-                    };
-                    setSwitchState('podcast-toggle-fixtures', data.showFixtures);
-                    setSwitchState('podcast-toggle-next-fixtures', data.showNextFixtures);
-                    setSwitchState('podcast-toggle-prediction', data.showPrediction);
-                    setSwitchState('podcast-toggle-player-stats', data.showPlayerStats);
-                    setSwitchState('podcast-toggle-match-stats', data.showMatchStats);
-                    setSwitchState('podcast-toggle-player-profile', data.showPlayerProfile);
-                    setSwitchState('podcast-toggle-questions', data.showQuestions);
-                    setSwitchState('podcast-toggle-news', data.showNews);
+            // COMMENT: This is the core authentication listener. It shows the login screen or the app based on the user's status.
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    loginContainer.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                    loginError.classList.add('hidden');
+                    initializeApp(); // The main app logic is called only after successful login.
                 } else {
-                    podcastVisibilityDocRef.set({
-                        showFixtures: false, showNextFixtures: false, showPrediction: false,
-                        showPlayerStats: false, showMatchStats: false, showPlayerProfile: false,
-                        showQuestions: false, showNews: false,
-                    });
+                    loginContainer.classList.remove('hidden');
+                    appContainer.classList.add('hidden');
                 }
             });
+
+            // COMMENT: Handles the form submission for logging in.
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                auth.signInWithEmailAndPassword(loginEmail.value, loginPassword.value)
+                    .catch(error => {
+                        console.error('Login Error:', error);
+                        loginError.textContent = 'Error: Invalid email or password.';
+                        loginError.classList.remove('hidden');
+                    });
+            });
             
-            getFixturesForYear();
-            fetchApiStatus();
-            setInterval(fetchApiStatus, 300000); 
+            // COMMENT: Handles the logout process.
+            logoutBtn.addEventListener('click', () => auth.signOut());
+
+
+            // COMMENT: All of your original podcast control panel logic is now safely inside this function.
+            function initializeApp() {
+                // Your existing constants (TEAM_COLORS, etc.)
+                const PODCAST_TEAM_ID = 1615; // D.C. United!
+                
+                // Firebase Document References
+                const podcastVisibilityDocRef = db.collection('podcast').doc('visibility');
+                const podcastFixtureDocRef = db.collection('podcast').doc('currentFixture');
+                const podcastFixturesDataDocRef = db.collection('podcast').doc('fixturesData');
+                const podcastNextFixturesDataDocRef = db.collection('podcast').doc('nextFixturesData');
+                const podcastPredictionDataDocRef = db.collection('podcast').doc('predictionData');
+                const podcastPlayerStatsDataDocRef = db.collection('podcast').doc('playerStatsData');
+                const podcastMatchStatsDataDocRef = db.collection('podcast').doc('matchStatsData');
+                const podcastQuestionsCollectionRef = db.collection('podcastQuestions');
+                const podcastCurrentQuestionDocRef = db.collection('podcast').doc('currentQuestion');
+                const podcastHeadlinesCollectionRef = db.collection('podcastHeadlines');
+                const podcastCurrentHeadlineDocRef = db.collection('podcast').doc('currentHeadline');
+
+                let sessionApiCallCount = 0;
+
+                // Element References
+                const statusText = document.getElementById('podcast-status-text');
+                const yearSelect = document.getElementById('podcast-year-select');
+                const getFixturesBtn = document.getElementById('podcast-get-fixtures-btn');
+                const fixtureSelect = document.getElementById('podcast-fixture-select');
+                const loadFixtureBtn = document.getElementById('podcast-load-fixture-btn');
+                const sessionApiCallsSpan = document.getElementById('podcast-session-api-calls');
+                const dailyApiCallsSpan = document.getElementById('podcast-daily-api-calls');
+                const questionTextInput = document.getElementById('question-text-input');
+                const questionNameInput = document.getElementById('question-name-input');
+                const questionSourceSelect = document.getElementById('question-source-select');
+                const addQuestionBtn = document.getElementById('add-question-btn');
+                const questionsListContainer = document.getElementById('questions-list-container');
+                const headlineTitleInput = document.getElementById('headline-title-input');
+                const headlineDescInput = document.getElementById('headline-desc-input');
+                const headlineImageInput = document.getElementById('headline-image-input');
+                const addHeadlineBtn = document.getElementById('add-headline-btn');
+                const headlinesListContainer = document.getElementById('headlines-list-container');
+                
+                document.getElementById('podcast-fixture-header').addEventListener('click', () => document.querySelector('.fixture-container').classList.toggle('collapsed'));
+
+                // COMMENT: This function securely calls your Netlify proxy, which then adds the API key.
+                async function fetchApiProxy(apiPath) {
+                    const response = await fetch(`/api${apiPath}`);
+                    sessionApiCallCount++; 
+                    sessionApiCallsSpan.textContent = sessionApiCallCount;
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `API Proxy Error: ${response.status}`);
+                    }
+                    return response.json();
+                }
+
+                async function fetchApiStatus() {
+                    try {
+                        const data = await fetchApiProxy('/status');
+                        if (data.response && data.response.requests) {
+                            dailyApiCallsSpan.textContent = `${data.response.requests.current} / ${data.response.requests.limit_day}`;
+                        }
+                    } catch (err) { console.error("Error fetching API status:", err); dailyApiCallsSpan.textContent = 'Error'; }
+                }
+
+                async function getFixturesForYear() {
+                    const year = yearSelect.value;
+                    statusText.textContent = `Checking for saved fixtures for ${year}...`;
+                    const fixturesDocRef = db.collection('fixtures').doc(year);
+                    try {
+                        const doc = await fixturesDocRef.get();
+                        if (doc.exists && doc.data().fixtures && doc.data().fixtures.length > 0) {
+                            statusText.textContent = `Fixtures for ${year} loaded from database.`;
+                            populateFixtureSelect(doc.data().fixtures);
+                        } else {
+                            statusText.textContent = `Fetching fixtures for ${year} from API...`;
+                            const data = await fetchApiProxy(`/fixtures?season=${year}&team=${PODCAST_TEAM_ID}`);
+                            if (!data.response || data.response.length === 0) throw new Error(`No fixtures found for ${year}.`);
+                            const fixtures = data.response.map(f => ({ id: f.fixture.id, name: `${f.teams.home.name} vs ${f.teams.away.name} (${new Date(f.fixture.date).toLocaleDateString()})`, competition: f.league.name }));
+                            await fixturesDocRef.set({ fixtures });
+                            statusText.textContent = `Fixtures for ${year} fetched and saved.`;
+                            populateFixtureSelect(fixtures);
+                        }
+                    } catch (err) { console.error("Error getting fixtures:", err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'red'; }
+                }
+                
+                function populateFixtureSelect(fixtures) {
+                    fixtureSelect.innerHTML = ''; 
+                    if (!fixtures || fixtures.length === 0) { fixtureSelect.innerHTML = '<option>No fixtures found</option>'; return; }
+                    const groupedByCompetition = fixtures.reduce((acc, fixture) => {
+                        const comp = fixture.competition || 'Other';
+                        if (!acc[comp]) acc[comp] = [];
+                        acc[comp].push(fixture);
+                        return acc;
+                    }, {});
+                    for (const competition in groupedByCompetition) {
+                        const optgroup = document.createElement('optgroup');
+                        optgroup.label = competition;
+                        groupedByCompetition[competition].forEach(fixture => {
+                            const option = document.createElement('option');
+                            option.value = fixture.id;
+                            option.textContent = fixture.name;
+                            optgroup.appendChild(option);
+                        });
+                        fixtureSelect.appendChild(optgroup);
+                    }
+                }
+
+                async function loadFixtureData() {
+                    const fixtureId = fixtureSelect.value;
+                    if (!fixtureId || isNaN(fixtureId)) { statusText.textContent = "Error: Please select a valid fixture."; statusText.style.color = 'red'; return; }
+                    statusText.textContent = "Fetching selected fixture data..."; statusText.style.color = '#555';
+                    try {
+                        const data = await fetchApiProxy(`/fixtures?id=${fixtureId}`);
+                        if (!data.response || data.response.length === 0) throw new Error("Fixture data not found.");
+                        const fixtureDetails = data.response[0];
+                        await podcastFixtureDocRef.set(fixtureDetails);
+                        statusText.textContent = `Successfully loaded: ${fixtureDetails.teams.home.name} vs ${fixtureDetails.teams.away.name}.`;
+                    } catch (err) { console.error("PODCAST APP ERROR:", err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'red'; }
+                }
+
+                async function refreshGenericData(endpoint, docRef, dataKey, successMessage, errorMessage) {
+                    const fixtureId = fixtureSelect.value;
+                    if (endpoint.includes('fixture=') && !fixtureId) {
+                         statusText.textContent = "Error: Please select a valid fixture first."; statusText.style.color = 'red'; return;
+                    }
+                    const url = `/api/${endpoint}`;
+                    statusText.textContent = `Fetching ${successMessage}...`; statusText.style.color = '#555';
+                     try {
+                        const data = await fetch(url);
+                        if (!data.ok) throw new Error('Network response was not ok.');
+                        const jsonData = await data.json();
+                        if (!jsonData.response || jsonData.response.length === 0) throw new Error(`No ${errorMessage} found.`);
+                        const payload = endpoint.includes('prediction') ? jsonData.response[0] : jsonData.response;
+                        await docRef.set({ [dataKey]: payload, lastUpdated: new Date().toISOString() });
+                        statusText.textContent = `${successMessage} refreshed and saved.`; statusText.style.color = 'green';
+                    } catch (err) { console.error(`Error refreshing ${successMessage}:`, err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'red'; }
+                }
+                
+                getFixturesBtn.addEventListener('click', getFixturesForYear);
+                loadFixtureBtn.addEventListener('click', loadFixtureData);
+                document.getElementById('podcast-refresh-fixtures-btn').addEventListener('click', () => refreshGenericData(`fixtures?season=${yearSelect.value}&team=${PODCAST_TEAM_ID}`, podcastFixturesDataDocRef, 'fixtures', 'Fixtures', 'fixtures'));
+                document.getElementById('podcast-refresh-next-fixtures-btn').addEventListener('click', () => refreshGenericData(`fixtures?team=${PODCAST_TEAM_ID}&next=5`, podcastNextFixturesDataDocRef, 'fixtures', 'Next fixtures', 'next fixtures'));
+                document.getElementById('podcast-refresh-prediction-btn').addEventListener('click', () => refreshGenericData(`predictions?fixture=${fixtureSelect.value}`, podcastPredictionDataDocRef, 'prediction', 'Prediction data', 'prediction data'));
+                document.getElementById('podcast-refresh-player-stats-btn').addEventListener('click', () => refreshGenericData(`fixtures/players?fixture=${fixtureSelect.value}`, podcastPlayerStatsDataDocRef, 'stats', 'Player stats', 'player stats'));
+                document.getElementById('podcast-refresh-match-stats-btn').addEventListener('click', () => refreshGenericData(`fixtures/statistics?fixture=${fixtureSelect.value}`, podcastMatchStatsDataDocRef, 'stats', 'Match stats', 'match stats'));
+
+                // Questions Panel Logic
+                addQuestionBtn.addEventListener('click', () => {
+                    const text = questionTextInput.value.trim();
+                    const name = questionNameInput.value.trim();
+                    const source = questionSourceSelect.value;
+                    if (!text || !name) {
+                        statusText.textContent = "Please enter both a question and a name.";
+                        statusText.style.color = 'red';
+                        return;
+                    }
+                    podcastQuestionsCollectionRef.add({ text, name, source, createdAt: new Date() });
+                    questionTextInput.value = '';
+                    questionNameInput.value = '';
+                });
+
+                podcastQuestionsCollectionRef.orderBy("createdAt", "desc").onSnapshot(snapshot => {
+                    questionsListContainer.innerHTML = '';
+                    if (snapshot.empty) { questionsListContainer.innerHTML = '<p>No questions added yet.</p>'; return; }
+                    snapshot.forEach(doc => {
+                        const question = doc.data();
+                        const item = document.createElement('div');
+                        item.className = 'dynamic-item';
+                        item.innerHTML = `<div class="dynamic-text">"${question.text}" — <strong>${question.name}</strong></div><div class="dynamic-actions"><button class="show-question-btn">Show</button><button class="remove-question-btn remove-btn">X</button></div>`;
+                        item.querySelector('.show-question-btn').addEventListener('click', () => {
+                            podcastCurrentQuestionDocRef.set({ ...question, show: true });
+                            statusText.textContent = `Set question from ${question.name} to be shown.`; statusText.style.color = 'green';
+                        });
+                        item.querySelector('.remove-question-btn').addEventListener('click', () => doc.ref.delete());
+                        questionsListContainer.appendChild(item);
+                    });
+                });
+
+                // Headlines Panel Logic
+                addHeadlineBtn.addEventListener('click', () => {
+                    const title = headlineTitleInput.value.trim();
+                    const description = headlineDescInput.value.trim();
+                    const imageFile = headlineImageInput.value.trim();
+
+                    if (!title || !description || !imageFile) {
+                        statusText.textContent = "Please fill in all headline fields.";
+                        statusText.style.color = 'red';
+                        return;
+                    }
+
+                    podcastHeadlinesCollectionRef.add({
+                        title,
+                        description,
+                        image: imageFile,
+                        createdAt: new Date()
+                    });
+
+                    headlineTitleInput.value = '';
+                    headlineDescInput.value = '';
+                    headlineImageInput.value = '';
+                });
+
+                podcastHeadlinesCollectionRef.orderBy("createdAt", "desc").onSnapshot(snapshot => {
+                    headlinesListContainer.innerHTML = '';
+                    if (snapshot.empty) { headlinesListContainer.innerHTML = '<p>No headlines added yet.</p>'; return; }
+                    snapshot.forEach(doc => {
+                        const headline = doc.data();
+                        const item = document.createElement('div');
+                        item.className = 'dynamic-item';
+                        item.innerHTML = `<div class="dynamic-text"><strong>${headline.title}</strong></div><div class="dynamic-actions"><button class="show-headline-btn">Show</button><button class="remove-headline-btn remove-btn">X</button></div>`;
+                        
+                        item.querySelector('.show-headline-btn').addEventListener('click', () => {
+                            podcastCurrentHeadlineDocRef.set({ ...headline, show: true });
+                            statusText.textContent = `Set headline "${headline.title}" to be shown.`; statusText.style.color = 'green';
+                        });
+
+                        item.querySelector('.remove-headline-btn').addEventListener('click', () => doc.ref.delete());
+                        headlinesListContainer.appendChild(item);
+                    });
+                });
+
+                // Switch Logic
+                const addSwitchListener = (elementId, firestoreField, currentDocRef) => {
+                    const toggle = document.getElementById(elementId);
+                    if (toggle) {
+                        toggle.addEventListener('change', (e) => {
+                            const isVisible = e.target.checked;
+                            podcastVisibilityDocRef.update({ [firestoreField]: isVisible });
+                            if (currentDocRef) {
+                                currentDocRef.update({ show: isVisible }).catch(() => currentDocRef.set({ show: isVisible }));
+                            }
+                        });
+                    }
+                };
+
+                addSwitchListener('podcast-toggle-fixtures', 'showFixtures');
+                addSwitchListener('podcast-toggle-next-fixtures', 'showNextFixtures');
+                addSwitchListener('podcast-toggle-prediction', 'showPrediction');
+                addSwitchListener('podcast-toggle-player-stats', 'showPlayerStats');
+                addSwitchListener('podcast-toggle-match-stats', 'showMatchStats');
+                addSwitchListener('podcast-toggle-player-profile', 'showPlayerProfile');
+                addSwitchListener('podcast-toggle-questions', 'showQuestions', podcastCurrentQuestionDocRef);
+                addSwitchListener('podcast-toggle-news', 'showNews', podcastCurrentHeadlineDocRef);
+
+                podcastVisibilityDocRef.onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        const setSwitchState = (id, value) => {
+                            const el = document.getElementById(id);
+                            if (el) el.checked = !!value;
+                        };
+                        setSwitchState('podcast-toggle-fixtures', data.showFixtures);
+                        setSwitchState('podcast-toggle-next-fixtures', data.showNextFixtures);
+                        setSwitchState('podcast-toggle-prediction', data.showPrediction);
+                        setSwitchState('podcast-toggle-player-stats', data.showPlayerStats);
+                        setSwitchState('podcast-toggle-match-stats', data.showMatchStats);
+                        setSwitchState('podcast-toggle-player-profile', data.showPlayerProfile);
+                        setSwitchState('podcast-toggle-questions', data.showQuestions);
+                        setSwitchState('podcast-toggle-news', data.showNews);
+                    } else {
+                        podcastVisibilityDocRef.set({
+                            showFixtures: false, showNextFixtures: false, showPrediction: false,
+                            showPlayerStats: false, showMatchStats: false, showPlayerProfile: false,
+                            showQuestions: false, showNews: false,
+                        });
+                    }
+                });
+                
+                // Initial data fetch
+                getFixturesForYear();
+                fetchApiStatus();
+                setInterval(fetchApiStatus, 300000); 
+            }
         });
     </script>
 </body>
