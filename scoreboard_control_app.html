@@ -9,191 +9,75 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
     
     <style>
-        /* --- Global & Fonts --- */
+        /* All your existing CSS styles remain here... */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        
-        /* --- Login Styles --- */
-        .hidden { display: none !important; }
-        #login-container { max-width: 400px; margin: 100px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        #login-container h1 { text-align: center; margin-top: 0; }
-        #login-form { display: flex; flex-direction: column; gap: 15px; }
-        #login-form input { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; }
-        #login-error { color: #e74c3c; text-align: center; font-weight: bold; margin-top: 10px; }
-
-
-        /* --- Main App Styles --- */
-        .control-panel-wrapper { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; padding-bottom: 15px; margin-bottom: 20px; }
-        .panel-header h1 { margin: 0; font-size: 24px; }
-        
-        .api-status-bar {
-            background-color: #e9ecef;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            font-size: 14px;
-        }
-        .api-status-bar .session-calls { text-align: left; }
-        .api-status-bar .daily-calls { text-align: right; }
-        .api-status-bar span { font-weight: bold; }
-        .polling-controls-wrapper { display: flex; justify-content: center; align-items: center; gap: 10px; }
-        
-        .fixture-container {
-            background-color: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-        .fixture-header {
-            padding: 15px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            user-select: none;
-        }
-         .fixture-header::after {
-            content: '▲';
-            transition: transform 0.3s ease;
-        }
-        .fixture-container.collapsed .fixture-header::after {
-             transform: rotate(180deg);
-        }
-        .data-fetch-section {
-            padding: 15px;
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            align-items: center;
-            gap: 15px;
-            max-height: 500px;
-            transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
-        }
-        .fixture-container.collapsed .data-fetch-section {
-            max-height: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-            overflow: hidden;
-        }
-
-        .data-fetch-section label { font-weight: bold; }
-        .data-fetch-section select, .data-fetch-section button {
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-            width: 100%;
-        }
-        .full-width {
-            grid-column: 1 / -1;
-        }
-        #status-text {
-            margin-top: 10px;
-            color: #555;
-            font-style: italic;
-        }
-
-        .control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px; }
-        .control-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; }
-        .card-title { margin-top: 0; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .score-controls { display: flex; flex-direction: column; gap: 15px; }
-        .team-control { display: flex; justify-content: space-between; align-items: center; }
-        .team-info { display: flex; align-items: center; gap: 10px; font-weight: 700; }
-        .team-logo-small { width: 30px; height: 30px; object-fit: contain; }
-        .score-buttons { display: flex; align-items: center; gap: 10px; }
-        .score-display { font-size: 20px; font-weight: 700; min-width: 30px; text-align: center; }
-        
-        .game-clock-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .clock-inputs {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        .clock-inputs input {
-            font-size: 18px;
-            width: 70px;
-        }
-        .clock-actions {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-        }
-        .clock-actions button {
-            flex-grow: 1;
-        }
-        .period-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .period-row {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-        }
-        .period-row button {
-            flex-grow: 1;
-        }
-        .stoppage-time-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 15px;
-        }
-        .stoppage-time-controls input {
-            width: 120px;
-        }
-        
-        .event-controls, .player-profile-controls, .player-stats-controls, .combined-lineup-controls, .match-stats-controls, .scroller-controls, .match-events-controls, .league-events-controls, .player-profile-season-controls, .prediction-controls { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
-        .event-controls > div { display: flex; gap: 10px; width: 100%;}
-        .event-controls select, .player-profile-controls select, .player-profile-season-controls select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; flex-grow: 1; }
-        .event-controls button, .button-row { margin-top: 10px; }
-        .sub-select { width: 50%; }
-        .button-row { display: flex; gap: 10px; }
-        .button-row button { flex-grow: 1; margin-top: 0 !important; }
-        button { padding: 8px 15px; border: none; background-color: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: 700; transition: background-color 0.2s; }
-        button:hover { background-color: #2980b9; }
-        button.logout-btn { background-color: #e74c3c; }
-        button.logout-btn:hover { background-color: #c0392b; }
-
-        input[type="number"] { width: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 5px; text-align: center; font-size: 16px; }
-
-        .switch-container { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-        .switch-container span { font-weight: 600; }
-        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #2ecc71; }
-        input:checked + .slider:before { transform: translateX(26px); }
-
+        body{font-family:'Poppins',sans-serif;background-color:#f0f2f5;margin:0;padding:20px;box-sizing:border-box}
+        .hidden{display:none!important}
+        #login-container{max-width:400px;margin:100px auto;background:#fff;padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+        #login-container h1{text-align:center;margin-top:0}
+        #login-form{display:flex;flex-direction:column;gap:15px}
+        #login-form input{padding:12px;font-size:16px;border:1px solid #ccc;border-radius:5px}
+        #login-error{color:#e74c3c;text-align:center;font-weight:700;margin-top:10px}
+        .control-panel-wrapper{max-width:1200px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.1);padding:20px}
+        .panel-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e0e0e0;padding-bottom:15px;margin-bottom:20px}
+        .panel-header h1{margin:0;font-size:24px}
+        .api-status-bar{background-color:#e9ecef;padding:10px 15px;border-radius:8px;margin-bottom:20px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;font-size:14px}
+        .api-status-bar .session-calls{text-align:left}
+        .api-status-bar .daily-calls{text-align:right}
+        .api-status-bar span{font-weight:700}
+        .polling-controls-wrapper{display:flex;justify-content:center;align-items:center;gap:10px}
+        .fixture-container{background-color:#f9f9f9;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:20px;overflow:hidden}
+        .fixture-header{padding:15px;cursor:pointer;font-weight:700;font-size:18px;display:flex;justify-content:space-between;align-items:center;-webkit-user-select:none;user-select:none}
+        .fixture-header::after{content:'▲';transition:transform .3s ease}
+        .fixture-container.collapsed .fixture-header::after{transform:rotate(180deg)}
+        .data-fetch-section{padding:15px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:15px;max-height:500px;transition:max-height .4s ease-in-out,padding .4s ease-in-out}
+        .fixture-container.collapsed .data-fetch-section{max-height:0;padding-top:0;padding-bottom:0;overflow:hidden}
+        .data-fetch-section label{font-weight:700}
+        .data-fetch-section select,.data-fetch-section button{padding:10px;border-radius:5px;border:1px solid #ccc;font-size:14px;width:100%}
+        .full-width{grid-column:1 / -1}
+        #status-text{margin-top:10px;color:#555;font-style:italic}
+        .control-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:15px}
+        .control-card{border:1px solid #e0e0e0;border-radius:8px;padding:15px}
+        .card-title{margin-top:0;font-size:18px;border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:15px}
+        .score-controls{display:flex;flex-direction:column;gap:15px}
+        .team-control{display:flex;justify-content:space-between;align-items:center}
+        .team-info{display:flex;align-items:center;gap:10px;font-weight:700}
+        .team-logo-small{width:30px;height:30px;object-fit:contain}
+        .score-buttons{display:flex;align-items:center;gap:10px}
+        .score-display{font-size:20px;font-weight:700;min-width:30px;text-align:center}
+        .game-clock-wrapper{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:15px}
+        .clock-inputs{display:flex;align-items:center;gap:5px;font-size:20px;font-weight:700}
+        .clock-inputs input{font-size:18px;width:70px}
+        .clock-actions{display:flex;gap:10px;width:100%}
+        .clock-actions button{flex-grow:1}
+        .period-controls{display:flex;flex-direction:column;gap:10px}
+        .period-row{display:flex;gap:10px;width:100%}
+        .period-row button{flex-grow:1}
+        .stoppage-time-controls{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:15px}
+        .stoppage-time-controls input{width:120px}
+        .event-controls,.player-profile-controls,.player-stats-controls,.combined-lineup-controls,.match-stats-controls,.scroller-controls,.match-events-controls,.league-events-controls,.player-profile-season-controls,.prediction-controls{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+        .event-controls>div{display:flex;gap:10px;width:100%}
+        .event-controls select,.player-profile-controls select,.player-profile-season-controls select{padding:8px;border-radius:5px;border:1px solid #ccc;flex-grow:1}
+        .event-controls button,.button-row{margin-top:10px}
+        .sub-select{width:50%}
+        .button-row{display:flex;gap:10px}
+        .button-row button{flex-grow:1;margin-top:0!important}
+        button{padding:8px 15px;border:none;background-color:#3498db;color:#fff;border-radius:5px;cursor:pointer;font-weight:700;transition:background-color .2s}
+        button:hover{background-color:#2980b9}
+        button.logout-btn{background-color:#e74c3c}
+        button.logout-btn:hover{background-color:#c0392b}
+        input[type=number]{width:60px;padding:8px;border:1px solid #ccc;border-radius:5px;text-align:center;font-size:16px}
+        .switch-container{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+        .switch-container span{font-weight:600}
+        .switch{position:relative;display:inline-block;width:60px;height:34px}
+        .switch input{opacity:0;width:0;height:0}
+        .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#ccc;transition:.4s;border-radius:34px}
+        .slider:before{position:absolute;content:"";height:26px;width:26px;left:4px;bottom:4px;background-color:#fff;transition:.4s;border-radius:50%}
+        input:checked+.slider{background-color:#2ecc71}
+        input:checked+.slider:before{transform:translateX(26px)}
     </style>
 </head>
 <body>
-
     <div id="login-container">
         <h1>Scoreboard Login</h1>
         <form id="login-form">
@@ -203,14 +87,12 @@
             <p id="login-error" class="hidden"></p>
         </form>
     </div>
-
     <div id="app-container" class="hidden">
         <div class="control-panel-wrapper">
             <header class="panel-header">
                 <h1>Scoreboard Control Panel</h1>
                 <button id="logout-btn" class="logout-btn">Logout</button>
             </header>
-
             <div class="api-status-bar">
                 <div class="session-calls">Session API Calls: <span id="session-api-calls">0</span></div>
                 <div class="polling-controls-wrapper">
@@ -222,7 +104,6 @@
                 </div>
                 <div class="daily-calls">Daily API Calls: <span id="daily-api-calls">Loading...</span></div>
             </div>
-
             <div class="fixture-container">
                 <div class="fixture-header" id="fixture-header">Fixture Selection</div>
                 <div class="data-fetch-section">
@@ -234,18 +115,14 @@
                         <option value="2022">2022</option>
                     </select>
                     <button id="get-fixtures-btn">Get Fixtures</button>
-                    
                     <label for="fixture-select">Fixture:</label>
                     <select id="fixture-select">
                         <option>Select a year first...</option>
                     </select>
                     <button id="load-fixture-btn">Load Selected Fixture</button>
-
                     <p id="status-text" class="full-width">Select a season and click "Get Fixtures" to begin.</p>
                 </div>
             </div>
-
-
             <div class="control-grid">
                 <div class="control-card">
                     <h2 class="card-title">Scoreboard</h2>
@@ -257,9 +134,8 @@
                         </label>
                     </div>
                 </div>
-
                 <div class="control-card">
-                     <h2 class="card-title">Score</h2>
+                    <h2 class="card-title">Score</h2>
                     <div class="score-controls">
                         <div class="team-control">
                             <div class="team-info">
@@ -267,9 +143,7 @@
                                 <span id="home-name-control">HOME</span>
                             </div>
                             <div class="score-buttons">
-                                <button id="home-score-down">-</button>
-                                <span id="home-score-display" class="score-display">0</span>
-                                <button id="home-score-up">+</button>
+                                <button id="home-score-down">-</button><span id="home-score-display" class="score-display">0</span><button id="home-score-up">+</button>
                             </div>
                         </div>
                         <div class="team-control">
@@ -278,14 +152,11 @@
                                 <span id="away-name-control">AWAY</span>
                             </div>
                             <div class="score-buttons">
-                                <button id="away-score-down">-</button>
-                                <span id="away-score-display" class="score-display">0</span>
-                                <button id="away-score-up">+</button>
+                                <button id="away-score-down">-</button><span id="away-score-display" class="score-display">0</span><button id="away-score-up">+</button>
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <div class="control-card">
                     <h2 class="card-title">Game Clock & Period</h2>
                     <div class="game-clock-wrapper">
@@ -294,32 +165,17 @@
                             <span>:</span>
                             <input type="number" id="seconds-input" value="0" min="0" max="59">
                         </div>
-                        <div class="clock-actions">
-                            <button id="set-time-btn">Set</button>
-                            <button id="play-pause-btn">Play</button>
-                            <button id="reset-time-btn">Reset</button>
-                        </div>
+                        <div class="clock-actions"><button id="set-time-btn">Set</button><button id="play-pause-btn">Play</button><button id="reset-time-btn">Reset</button></div>
                     </div>
                     <div class="period-controls">
-                        <div class="period-row">
-                            <button class="period-btn" data-period="1H" data-time="0">1H</button>
-                            <button class="period-btn" data-period="HT" data-time="45">HT</button>
-                            <button class="period-btn" data-period="2H" data-time="45">2H</button>
-                            <button class="period-btn" data-period="FT" data-time="90">FT</button>
-                        </div>
-                        <div class="period-row">
-                            <button class="period-btn" data-period="ET1" data-time="90">ET1</button>
-                            <button class="period-btn" data-period="ET2" data-time="105">ET2</button>
-                            <button class="period-btn" data-period="PENS" data-time="120">PENS</button>
-                        </div>
+                        <div class="period-row"><button class="period-btn" data-period="1H" data-time="0">1H</button><button class="period-btn" data-period="HT" data-time="45">HT</button><button class="period-btn" data-period="2H" data-time="45">2H</button><button class="period-btn" data-period="FT" data-time="90">FT</button></div>
+                        <div class="period-row"><button class="period-btn" data-period="ET1" data-time="90">ET1</button><button class="period-btn" data-period="ET2" data-time="105">ET2</button><button class="period-btn" data-period="PENS" data-time="120">PENS</button></div>
                     </div>
-                     <div class="stoppage-time-controls">
+                    <div class="stoppage-time-controls">
                         <input type="number" id="stoppage-input" placeholder="+ Mins" min="0">
-                        <button id="show-stoppage-btn">Show</button>
-                        <button id="hide-stoppage-btn">Hide</button>
+                        <button id="show-stoppage-btn">Show</button><button id="hide-stoppage-btn">Hide</button>
                     </div>
                 </div>
-
                 <div class="control-card">
                     <h2 class="card-title">Broadcast Events</h2>
                     <div class="event-controls">
@@ -351,20 +207,19 @@
                         <div id="var-team-section" class="hidden">
                             <label for="var-team-select">Team:</label>
                             <select id="var-team-select">
-                               </select>
+                            </select>
                         </div>
                         <button id="trigger-event-btn">Trigger Event</button>
                     </div>
                 </div>
-
-                 <div class="control-card">
+                <div class="control-card">
                     <h2 class="card-title">Player Profile - Match</h2>
                     <div class="player-profile-controls">
                         <label for="player-profile-select">Player:</label>
                         <select id="player-profile-select">
                             <option value="">(Load fixture first)</option>
                         </select>
-                        <div class="button-row" style="margin-bottom: 10px;">
+                        <div class="button-row" style="margin-bottom:10px">
                             <button id="show-player-btn">Refresh & Show Player</button>
                         </div>
                     </div>
@@ -376,7 +231,6 @@
                         </label>
                     </div>
                 </div>
-                
                 <div class="control-card">
                     <h2 class="card-title">Player Stats</h2>
                     <div class="switch-container">
@@ -387,7 +241,6 @@
                         </label>
                     </div>
                 </div>
-
                 <div class="control-card">
                     <h2 class="card-title">Combined Lineup</h2>
                     <div class="switch-container">
@@ -398,7 +251,6 @@
                         </label>
                     </div>
                 </div>
-
                 <div class="control-card">
                     <h2 class="card-title">Match Stats</h2>
                     <div class="switch-container">
@@ -409,7 +261,6 @@
                         </label>
                     </div>
                 </div>
-
                 <div class="control-card">
                     <h2 class="card-title">Scroller</h2>
                     <div class="switch-container">
@@ -420,7 +271,6 @@
                         </label>
                     </div>
                 </div>
-                
                 <div class="control-card">
                     <h2 class="card-title">Match Events Ticker</h2>
                     <div class="switch-container">
@@ -431,7 +281,6 @@
                         </label>
                     </div>
                 </div>
-
                 <div class="control-card">
                     <h2 class="card-title">League Events Ticker</h2>
                     <div class="switch-container">
@@ -442,7 +291,6 @@
                         </label>
                     </div>
                 </div>
-
                 <div class="control-card">
                     <h2 class="card-title">Player Profile - Season</h2>
                     <div class="player-profile-season-controls">
@@ -450,12 +298,9 @@
                         <select id="player-profile-season-select">
                             <option value="">(Load fixture first)</option>
                         </select>
-                        <div class="button-row">
-                            <button id="load-player-season-btn">Load Data</button>
-                            <button id="show-player-season-btn">Show Player</button>
-                        </div>
+                        <div class="button-row"><button id="load-player-season-btn">Load Data</button><button id="show-player-season-btn">Show Player</button></div>
                     </div>
-                     <div class="switch-container">
+                    <div class="switch-container">
                         <span>Show Visual</span>
                         <label class="switch">
                             <input type="checkbox" id="toggle-player-season">
@@ -463,12 +308,9 @@
                         </label>
                     </div>
                 </div>
-                
                 <div class="control-card">
                     <h2 class="card-title">Prediction Graphic</h2>
-                    <div class="button-row" style="margin-bottom: 10px;">
-                        <button id="load-prediction-btn">Load Data</button>
-                    </div>
+                    <div class="button-row" style="margin-bottom:10px"><button id="load-prediction-btn">Load Data</button></div>
                     <div class="switch-container">
                         <span>Show Visual</span>
                         <label class="switch">
@@ -477,7 +319,6 @@
                         </label>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -493,10 +334,8 @@
                 appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
             };
             firebase.initializeApp(firebaseConfig);
-
             const auth = firebase.auth();
             const db = firebase.firestore();
-
             const loginContainer = document.getElementById('login-container');
             const appContainer = document.getElementById('app-container');
             const loginForm = document.getElementById('login-form');
@@ -504,7 +343,6 @@
             const loginPassword = document.getElementById('login-password');
             const loginError = document.getElementById('login-error');
             const logoutBtn = document.getElementById('logout-btn');
-
             auth.onAuthStateChanged(user => {
                 if (user) {
                     loginContainer.classList.add('hidden');
@@ -516,25 +354,31 @@
                     appContainer.classList.add('hidden');
                 }
             });
-
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const email = loginEmail.value;
-                const password = loginPassword.value;
-                loginError.classList.add('hidden');
-                auth.signInWithEmailAndPassword(email, password)
+                auth.signInWithEmailAndPassword(loginEmail.value, loginPassword.value)
                     .catch(error => {
                         console.error('Login Error:', error);
                         loginError.textContent = 'Error: Invalid email or password.';
                         loginError.classList.remove('hidden');
                     });
             });
-            
-            logoutBtn.addEventListener('click', () => {
-                auth.signOut();
-            });
+            logoutBtn.addEventListener('click', () => auth.signOut());
 
             function initializeApp() {
+                const sessionApiCallsSpan = document.getElementById('session-api-calls');
+                let sessionApiCallCount = 0;
+                async function fetchApiProxy(apiPath) {
+                    const response = await fetch(`/api${apiPath}`);
+                    sessionApiCallCount++; 
+                    document.getElementById('session-api-calls').textContent = sessionApiCallCount;
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `API Proxy Error: ${response.status}`);
+                    }
+                    return response.json();
+                }
+
                 const scoreboardDocRef = db.collection('scoreboard').doc('liveState');
                 const scoreboardVisibilityDocRef = db.collection('scoreboard').doc('visibility');
                 const fixtureDocRef = db.collection('scoreboard').doc('currentFixture');
@@ -561,7 +405,6 @@
                 let fixturePlayerStats = [];
                 let currentLineups = [];
                 let statsPollingInterval = null;
-                let sessionApiCallCount = 0;
                 let loadedSeasonPlayerData = null;
 
                 const statusText = document.getElementById('status-text');
@@ -587,7 +430,6 @@
                 const playerProfileSelect = document.getElementById('player-profile-select');
                 const showPlayerBtn = document.getElementById('show-player-btn');
                 const pollingToggle = document.getElementById('polling-toggle');
-                const sessionApiCallsSpan = document.getElementById('session-api-calls');
                 const dailyApiCallsSpan = document.getElementById('daily-api-calls');
                 const playerProfileSeasonSelect = document.getElementById('player-profile-season-select');
                 const loadPlayerSeasonBtn = document.getElementById('load-player-season-btn');
@@ -596,22 +438,6 @@
                 
                 const DC_UNITED_TEAM_ID = 1615;
                 const MLS_LEAGUE_ID = 253;
-
-                // --- Helper function for secure API calls via Netlify ---
-                async function fetchApiProxy(apiPath) {
-                    const response = await fetch(`/.netlify/functions/football-api?path=${encodeURIComponent(apiPath)}`);
-                    sessionApiCallCount++; 
-                    updateSessionCallCount();
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || `API Proxy Error: ${response.status}`);
-                    }
-                    return response.json();
-                }
-
-                function updateSessionCallCount() {
-                    sessionApiCallsSpan.textContent = sessionApiCallCount;
-                }
 
                 fixtureHeader.addEventListener('click', () => fixtureContainer.classList.toggle('collapsed'));
 
@@ -764,6 +590,10 @@
                             fetchApiProxy(`/fixtures?live=all`),
                             fetchApiProxy(`/fixtures/events?fixture=${fixtureId}`)
                         ]);
+
+                        // COMMENT: This is the added line for debugging.
+                        // It will print the full response from the API to your browser's console.
+                        console.log('API Response for fixtureData:', fixtureData);
 
                         if (!fixtureData.response || fixtureData.response.length === 0) throw new Error("Fixture data not found.");
                         
