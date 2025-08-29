@@ -15,17 +15,19 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- NEW: Firebase config is now embedded directly in the script ---
             const firebaseConfig = {
-            apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
-  authDomain: "scoreboard-control.firebaseapp.com",
-  projectId: "scoreboard-control",
-  storageBucket: "scoreboard-control.firebasestorage.app",
-  messagingSenderId: "438021450087",
-  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.appspot.com",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
             };
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
+
+            // COMMENT: Define the base URL for your GitHub Pages assets.
+            const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
 
             const container = document.getElementById('player-profile-container');
             const playerProfileSeasonDocRef = db.collection('scoreboard').doc('playerProfileSeason');
@@ -38,12 +40,9 @@
                 }
             });
 
-            // --- NEW: Helper function to determine rating color ---
-            // REASON: This function takes the rating and returns a CSS class for color-coding.
             function getRatingColorClass(rating) {
                 const ratingValue = parseFloat(rating);
                 if (isNaN(ratingValue)) return 'rating-default';
-
                 if (ratingValue <= 5.99) return 'rating-red';
                 if (ratingValue <= 6.99) return 'rating-amber';
                 if (ratingValue <= 7.99) return 'rating-light-green';
@@ -64,12 +63,16 @@
                 }
                 
                 const isGoalkeeper = mlsStats.games.position === 'Goalkeeper';
-                const localImagePath = `/images/players/${playerInfo.id}.png`;
                 
+                // COMMENT: Updated player image path.
+                const imageUrl = `${assetsBaseUrl}player_images/${playerInfo.id}.png`;
+                // COMMENT: Updated background team logo path.
+                const backgroundLogoUrl = `${assetsBaseUrl}assets/logos/${mlsStats.team.id}.png`;
+
                 const wrapper = document.createElement('div');
                 wrapper.className = 'profile-wrapper';
 
-                wrapper.innerHTML = `<img src="${mlsStats.team?.logo}" class="background-logo" alt="${mlsStats.team?.name} Background Logo">`;
+                wrapper.innerHTML = `<img src="${backgroundLogoUrl}" class="background-logo" alt="${mlsStats.team?.name} Background Logo" onerror="this.src='${mlsStats.team?.logo}'">`;
 
                 const topBarHTML = `
                     <div class="top-bar">
@@ -89,7 +92,7 @@
                 content.innerHTML = `
                     <div class="player-column">
                         <div class="player-image-container">
-                            <img src="${localImagePath}" 
+                            <img src="${imageUrl}" 
                                  onerror="this.onerror=null; this.src='${playerInfo.photo}';" 
                                  alt="${playerInfo.name}" 
                                  class="player-photo">
@@ -109,11 +112,12 @@
 
             function generateStatsCard(stat, isGoalkeeper) {
                 if (!stat) return '';
-                // UPDATED: The 'Rating' line now calls a special function to apply color.
+                // COMMENT: Updated league logo path.
+                const leagueLogoUrl = `${assetsBaseUrl}assets/leagues/${stat.league.id}.png`;
                 return `
                     <div class="stats-card">
                         <div class="stats-card-header">
-                            <img src="${stat.league?.logo}" alt="${stat.league?.name}">
+                            <img src="${leagueLogoUrl}" alt="${stat.league?.name}" onerror="this.src='${stat.league?.logo}'">
                             <h3>${stat.league?.name} Season Stats</h3>
                         </div>
                         <div class="stats-grid">
@@ -121,27 +125,21 @@
                             ${createStatItem('Lineups', stat.games?.lineups)}
                             ${createStatItem('Minutes', stat.games?.minutes)}
                             ${createRatingStatItem('Rating', stat.games?.rating)}
-                            
                             ${createStatItem('Goals', stat.goals?.total)}
                             ${createStatItem('Assists', stat.goals?.assists)}
                             ${createStatItem('Total Shots', stat.shots?.total)}
                             ${createStatItem('Shots on Target', stat.shots?.on)}
-                            
                             ${createStatItem('Passes', stat.passes?.total)}
                             ${createStatItem('Key Passes', stat.passes?.key)}
-                            
                             ${createStatItem('Tackles', stat.tackles?.total)}
                             ${createStatItem('Interceptions', stat.tackles?.interceptions)}
                             ${createStatItem('Duels Won', stat.duels?.won)}
-
                             ${createStatItem('Fouls Drawn', stat.fouls?.drawn)}
                             ${createStatItem('Fouls Committed', stat.fouls?.committed)}
                             ${createStatItem('Yellow Cards', stat.cards?.yellow)}
                             ${createStatItem('Red Cards', stat.cards?.red)}
-
                             ${createStatItem('Goals Conceded', isGoalkeeper ? stat.goals?.conceded : 'N/A')}
                             ${createStatItem('Saves', isGoalkeeper ? stat.goals?.saves : 'N/A')}
-                            
                             ${createStatItem('Penalty Won', stat.penalty?.won)}
                             ${createStatItem('Penalty Scored', stat.penalty?.scored)}
                             ${createStatItem('Penalty Missed', stat.penalty?.missed)}
@@ -161,8 +159,6 @@
                 `;
             }
 
-            // --- NEW: A special function for creating the rating stat item ---
-            // REASON: This allows us to add the color class specifically to the rating value.
             function createRatingStatItem(label, value) {
                 const displayValue = (value !== null && value !== undefined) ? parseFloat(value).toFixed(2) : '-';
                 const colorClass = getRatingColorClass(value);

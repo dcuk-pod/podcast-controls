@@ -13,18 +13,19 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- NEW: Firebase config is now embedded directly in the script ---
-            // REASON: This removes the need for an extra file and keeps the overlay self-contained.
             const firebaseConfig = {
                 apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
-  authDomain: "scoreboard-control.firebaseapp.com",
-  projectId: "scoreboard-control",
-  storageBucket: "scoreboard-control.firebasestorage.app",
-  messagingSenderId: "438021450087",
-  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.appspot.com",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
             };
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
+            
+            // COMMENT: Define the base URL for your GitHub Pages assets.
+            const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
 
             const statsContainer = document.getElementById('stats-container');
             const matchStatsDocRef = db.collection('scoreboard').doc('matchStats');
@@ -72,11 +73,16 @@
                      statsContainer.innerHTML = '<h1>Waiting for match stats to become available...</h1>';
                      return;
                 }
+                
+                // COMMENT: Updated background logo paths.
+                const homeLogoUrl = `${assetsBaseUrl}assets/logos/${fixture.teams.home.id}.png`;
+                const awayLogoUrl = `${assetsBaseUrl}assets/logos/${fixture.teams.away.id}.png`;
+                const leagueLogoUrl = `${assetsBaseUrl}assets/leagues/${fixture.league.id}.png`;
 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'stats-wrapper';
 
-                wrapper.innerHTML += `<div class="background-logos"><img src="assets/logos/${fixture.teams.home.id}.png" alt=""><img src="assets/logos/${fixture.teams.away.id}.png" alt=""></div>`;
+                wrapper.innerHTML += `<div class="background-logos"><img src="${homeLogoUrl}" alt="" onerror="this.src='${fixture.teams.home.logo}'"><img src="${awayLogoUrl}" alt="" onerror="this.src='${fixture.teams.away.logo}'"></div>`;
                 const content = document.createElement('div');
                 content.className = 'stats-content';
 
@@ -85,7 +91,7 @@
 
                 content.innerHTML += `
                     <div class="top-bar">
-                        <img src="${fixture.league.logo}" alt="${fixture.league.name}" class="league-logo">
+                        <img src="${leagueLogoUrl}" alt="${fixture.league.name}" class="league-logo" onerror="this.src='${fixture.league.logo}'">
                         <div class="fixture-details">
                             <div class="fixture-name">
                                 <span class="team-name home">${fixture.teams.home.name}</span>

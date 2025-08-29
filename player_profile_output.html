@@ -8,162 +8,42 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
-
-        body {
-            background-color: transparent;
-            font-family: 'Poppins', sans-serif;
-            color: #1a2c2c;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .profile-wrapper-v2 {
-            width: 1520px;
-            height: 300px;
-            background-color: transparent;
-            box-sizing: border-box;
-            position: relative;
-            opacity: 0;
-            transform: translateY(100%);
-            transition: opacity 0.5s ease, transform 0.5s ease;
-        }
-
-        .profile-wrapper-v2.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .content-bar-v2 {
-            width: 100%;
-            height: 200px;
-            background-color: #ffffff;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-            border-radius: 0px;
-            display: flex;
-            align-items: center;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            box-sizing: border-box;
-            padding-left: 300px; 
-        }
-
-        .player-image-container-v2 {
-            height: 300px;
-            width: 300px;
-            position: absolute;
-            bottom: 0;
-            left: 20px;
-            z-index: 2;
-        }
-
-        .player-photo-v2 {
-            height: 100%;
-            object-fit: contain;
-            filter: drop-shadow(5px 0px 20px rgba(0,0,0,0.25));
-        }
-
-        .player-details-v2 {
-            display: flex;
-            flex-direction: column;
-            width: 400px;
-            flex-shrink: 0;
-        }
-
-        .player-identity-v2 {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .player-number-v2 {
-            font-size: 44px;
-            font-weight: 800;
-            color: #414448;
-        }
-
-        .player-name-v2 {
-            font-size: 36px;
-            font-weight: 800;
-            text-transform: uppercase;
-            margin: 0;
-            line-height: 1.1;
-        }
-
-        .stats-grid-v2 {
-            flex-grow: 1;
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px 20px;
-            padding: 0 40px;
-        }
-
-        .stat-item-v2 {
-            display: flex;
-            flex-direction: column;
-            text-align: center;
-            justify-content: center;
-        }
-
-        .value-v2 {
-            font-size: 26px;
-            font-weight: 600;
-        }
-
-        .label-v2 {
-            font-size: 11px;
-            color: #414448;
-            text-transform: uppercase;
-            font-weight: 400;
-        }
-
-        .team-logo-v2 {
-            position: absolute;
-            right: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-            height: 200px;
-            opacity: 0.05;
-            z-index: 0;
-        }
-
-        /* --- NEW: Styles for the color-coded rating --- */
-        /* REASON: These styles give the player rating a dynamic background color based on performance. */
-        .value-v2.rating {
-            padding: 2px 12px;
-            border-radius: 16px;
-            color: white;
-            font-weight: 800;
-            display: inline-block;
-            margin: 0 auto;
-        }
-        .rating-red { background-color: #e74c3c; } /* Red for 0-5.99 */
-        .rating-amber { background-color: #f39c12; } /* Amber for 6-6.99 */
-        .rating-light-green { background-color: #2ecc71; } /* Light Green for 7-7.99 */
-        .rating-dark-green { background-color: #27ae60; } /* Dark Green for 8-8.99 */
-        .rating-blue { background-color: #3498db; } /* Blue for 9-10 */
-
+        body { background-color: transparent; font-family: 'Poppins', sans-serif; color: #1a2c2c; margin: 0; padding: 0; overflow: hidden; }
+        .profile-wrapper-v2 { width: 1520px; height: 300px; background-color: transparent; box-sizing: border-box; position: relative; opacity: 0; transform: translateY(100%); transition: opacity 0.5s ease, transform 0.5s ease; }
+        .profile-wrapper-v2.visible { opacity: 1; transform: translateY(0); }
+        .content-bar-v2 { width: 100%; height: 200px; background-color: #ffffff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); border-radius: 0px; display: flex; align-items: center; position: absolute; bottom: 0; left: 0; box-sizing: border-box; padding-left: 300px; }
+        .player-image-container-v2 { height: 300px; width: 300px; position: absolute; bottom: 0; left: 20px; z-index: 2; }
+        .player-photo-v2 { height: 100%; object-fit: contain; filter: drop-shadow(5px 0px 20px rgba(0,0,0,0.25)); }
+        .player-details-v2 { display: flex; flex-direction: column; width: 400px; flex-shrink: 0; }
+        .player-identity-v2 { display: flex; align-items: center; gap: 15px; }
+        .player-number-v2 { font-size: 44px; font-weight: 800; color: #414448; }
+        .player-name-v2 { font-size: 36px; font-weight: 800; text-transform: uppercase; margin: 0; line-height: 1.1; }
+        .stats-grid-v2 { flex-grow: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px 20px; padding: 0 40px; }
+        .stat-item-v2 { display: flex; flex-direction: column; text-align: center; justify-content: center; }
+        .value-v2 { font-size: 26px; font-weight: 600; }
+        .label-v2 { font-size: 11px; color: #414448; text-transform: uppercase; font-weight: 400; }
+        .team-logo-v2 { position: absolute; right: -20px; top: 50%; transform: translateY(-50%); height: 200px; opacity: 0.05; z-index: 0; }
+        .value-v2.rating { padding: 2px 12px; border-radius: 16px; color: white; font-weight: 800; display: inline-block; margin: 0 auto; }
+        .rating-red { background-color: #e74c3c; } .rating-amber { background-color: #f39c12; } .rating-light-green { background-color: #2ecc71; } .rating-dark-green { background-color: #27ae60; } .rating-blue { background-color: #3498db; }
     </style>
 </head>
 <body>
-    
-    <div id="player-profile-container">
-        </div>
-
+    <div id="player-profile-container"></div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- NEW: Firebase config is now embedded directly in the script ---
             const firebaseConfig = {
-            apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
-  authDomain: "scoreboard-control.firebaseapp.com",
-  projectId: "scoreboard-control",
-  storageBucket: "scoreboard-control.firebasestorage.app",
-  messagingSenderId: "438021450087",
-  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.appspot.com",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
             };
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
+
+            // COMMENT: Define the base URL for your GitHub Pages assets.
+            const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
 
             const container = document.getElementById('player-profile-container');
             const playerProfileDocRef = db.collection('scoreboard').doc('playerProfile');
@@ -187,20 +67,26 @@
             }
 
             function buildProfile(data) {
-                container.innerHTML = ''; // Clear previous profile
+                container.innerHTML = ''; 
 
                 const playerInfo = data.player;
                 const stats = data.stats;
                 const team = data.team;
                 
-                const localImagePath = `/images/players/${playerInfo.id}.png`;
+                // COMMENT: Updated player image path.
+                // REASON: Constructs the full URL to the player's image in your GitHub repository.
+                const imageUrl = `${assetsBaseUrl}player_images/${playerInfo.id}.png`;
                 
+                // COMMENT: Updated team logo path.
+                // REASON: Constructs the full URL to the team's logo in your GitHub repository.
+                const teamLogoUrl = `${assetsBaseUrl}assets/logos/${team.id}.png`;
+
                 const wrapper = document.createElement('div');
                 wrapper.className = 'profile-wrapper-v2';
 
                 wrapper.innerHTML = `
                     <div class="player-image-container-v2">
-                        <img src="${localImagePath}" 
+                        <img src="${imageUrl}" 
                              onerror="this.onerror=null; this.src='${playerInfo.photo}';" 
                              alt="${playerInfo.name}" 
                              class="player-photo-v2">
@@ -218,18 +104,16 @@
                             ${generateStatsGrid(stats)}
                         </div>
 
-                        <img src="${team.logo}" class="team-logo-v2" alt="${team.name} Logo">
+                        <img src="${teamLogoUrl}" class="team-logo-v2" alt="${team.name} Logo" onerror="this.src='${team.logo}'">
                     </div>
                 `;
                 
                 container.appendChild(wrapper);
-
                 setTimeout(() => wrapper.classList.add('visible'), 100);
             }
 
             function generateStatsGrid(stat) {
                 if (!stat) return '';
-                
                 let statsHTML = '';
                 statsHTML += createStatItem('Rating', stat.games.rating);
                 statsHTML += createStatItem('Minutes', stat.games.minutes);
@@ -241,15 +125,12 @@
                 statsHTML += createStatItem('Tackles', stat.tackles.total);
                 statsHTML += createStatItem('Duels Won', stat.duels.won);
                 statsHTML += createStatItem('Yellow Cards', stat.cards.yellow);
-                
                 return statsHTML;
             }
 
-            // --- NEW: Helper function to determine rating color ---
-            // REASON: This function takes the rating and returns the correct CSS class based on performance.
             function getRatingColorClass(ratingStr) {
                 const rating = parseFloat(ratingStr);
-                if (isNaN(rating)) return ''; // Return no class if the rating isn't a number
+                if (isNaN(rating)) return '';
                 if (rating < 6) return 'rating-red';
                 if (rating < 7) return 'rating-amber';
                 if (rating < 8) return 'rating-light-green';
@@ -257,19 +138,15 @@
                 return 'rating-blue';
             }
 
-            // --- UPDATED: createStatItem now handles rating colors ---
-            // REASON: This function now uses the helper above to apply a dynamic color class to the rating stat.
             function createStatItem(label, value) {
                 const displayValue = (value !== null && value !== undefined) ? value : '-';
                 let valueClass = 'value-v2';
-
                 if (label === 'Rating') {
                     const ratingClass = getRatingColorClass(displayValue);
                     if(ratingClass) {
-                        valueClass += ` rating ${ratingClass}`; // e.g., "value-v2 rating rating-light-green"
+                        valueClass += ` rating ${ratingClass}`;
                     }
                 }
-
                 return `
                     <div class="stat-item-v2">
                         <span class="${valueClass}">${displayValue}</span>

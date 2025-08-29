@@ -13,18 +13,19 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- NEW: Firebase config is now embedded directly in the script ---
-            // REASON: This removes the need for an extra file and keeps the overlay self-contained.
             const firebaseConfig = {
                 apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
-  authDomain: "scoreboard-control.firebaseapp.com",
-  projectId: "scoreboard-control",
-  storageBucket: "scoreboard-control.firebasestorage.app",
-  messagingSenderId: "438021450087",
-  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.appspot.com",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
             };
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
+
+            // COMMENT: Define the base URL for your GitHub Pages assets.
+            const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
 
             const mainContainer = document.getElementById('main-container');
             const scrollerDocRef = db.collection('scoreboard').doc('scroller');
@@ -40,7 +41,7 @@
             let matchStats = null;
 
             let panelInterval;
-            const panelSwitchInterval = 10000; // 10 seconds per panel
+            const panelSwitchInterval = 10000; 
 
             function renderGraphic() {
                 if (showScroller) {
@@ -113,20 +114,15 @@
                     let statsGridHTML = '';
                     statsToDisplay.forEach(stat => { statsGridHTML += `<div>${findStat(homeTeamStats, stat.type)}</div><div class="label">${stat.label}</div><div>${findStat(awayTeamStats, stat.type)}</div>`; });
                     
-                    // --- MODIFICATION START ---
-                    // REASON: The original code directly used currentFixtureDetail.goals, which can be null before a match starts, causing a "null - null" display.
-                    // This new code first looks for the score in the most recent `liveFixtures` data.
-                    // If the match isn't live yet, it checks the original fixture data from when it was loaded.
-                    // If both are unavailable, it safely defaults the score to 0 using the '??' operator.
                     const liveMatchData = liveFixtures ? liveFixtures.find(f => f.fixture.id === currentFixtureDetail.fixture.id) : null;
                     const homeScore = liveMatchData?.goals?.home ?? currentFixtureDetail.goals?.home ?? 0;
                     const awayScore = liveMatchData?.goals?.away ?? currentFixtureDetail.goals?.away ?? 0;
-                    // --- MODIFICATION END ---
                     
-                    // --- MODIFICATION START ---
-                    // REASON: The safe score variables (homeScore, awayScore) are now used here instead of the potentially null values.
-                    matchStatsPanel.innerHTML = `<div class="stats-header"><div class="stats-team home"><img src="${currentFixtureDetail.teams.home.logo}" class="stats-team-logo"><span>${currentFixtureDetail.teams.home.name}</span></div><div class="stats-score">${homeScore} - ${awayScore}</div><div class="stats-team away"><img src="${currentFixtureDetail.teams.away.logo}" class="stats-team-logo"><span>${currentFixtureDetail.teams.away.name}</span></div></div><div class="stats-grid">${statsGridHTML}</div>`;
-                    // --- MODIFICATION END ---
+                    // COMMENT: Updated team logo paths for the stats header.
+                    const homeLogoUrl = `${assetsBaseUrl}assets/logos/${currentFixtureDetail.teams.home.id}.png`;
+                    const awayLogoUrl = `${assetsBaseUrl}assets/logos/${currentFixtureDetail.teams.away.id}.png`;
+
+                    matchStatsPanel.innerHTML = `<div class="stats-header"><div class="stats-team home"><img src="${homeLogoUrl}" class="stats-team-logo" onerror="this.src='${currentFixtureDetail.teams.home.logo}'"><span>${currentFixtureDetail.teams.home.name}</span></div><div class="stats-score">${homeScore} - ${awayScore}</div><div class="stats-team away"><img src="${awayLogoUrl}" class="stats-team-logo" onerror="this.src='${currentFixtureDetail.teams.away.logo}'"><span>${currentFixtureDetail.teams.away.name}</span></div></div><div class="stats-grid">${statsGridHTML}</div>`;
                     filmstrip.appendChild(matchStatsPanel);
                 }
 
@@ -157,20 +153,13 @@
                     const stats = p.statistics[0];
                     if (stats.games.minutes) { 
                         const rating = stats.games.rating ? parseFloat(stats.games.rating).toFixed(1) : '-';
-                        
                         const r = parseFloat(rating);
                         let ratingClass = '';
                         if (r < 6) ratingClass = 'rating-red';
                         else if (r >= 7 && r < 8) ratingClass = 'rating-green-light';
                         else if (r >= 8 && r < 9) ratingClass = 'rating-green-dark';
                         else if (r >= 9) ratingClass = 'rating-blue';
-
-                        ratingsHTML += `
-                            <div class="rating-item">
-                                <span class="player-name">${p.player.name}</span>
-                                <span class="player-rating ${ratingClass}">${rating}</span>
-                            </div>
-                        `;
+                        ratingsHTML += `<div class="rating-item"><span class="player-name">${p.player.name}</span><span class="player-rating ${ratingClass}">${rating}</span></div>`;
                     }
                 });
                 ratingsHTML += '</div>';
@@ -182,17 +171,13 @@
                 const filmstrip = document.getElementById('filmstrip');
                 const panelTitle = document.getElementById('panel-title');
                 if (!filmstrip || !panelTitle) return;
-
                 let currentPanel = 0;
                 const totalPanels = filmstrip.children.length;
-
                 if (totalPanels <= 1) return;
-
                 filmstrip.style.width = `${totalPanels * 100}%`;
                 filmstrip.childNodes.forEach(node => node.style.width = `${100 / totalPanels}%`);
                 filmstrip.style.transform = `translateX(0%)`;
                 panelTitle.textContent = filmstrip.children[0].dataset.title || 'Live Ticker';
-
                 panelInterval = setInterval(() => {
                     currentPanel = (currentPanel + 1) % totalPanels;
                     filmstrip.style.transform = `translateX(-${currentPanel * (100 / totalPanels)}%)`;

@@ -14,18 +14,19 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- NEW: Firebase config is now embedded directly in the script ---
-            // REASON: This removes the need for an extra file and keeps the overlay self-contained.
             const firebaseConfig = {
                 apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
-  authDomain: "scoreboard-control.firebaseapp.com",
-  projectId: "scoreboard-control",
-  storageBucket: "scoreboard-control.firebasestorage.app",
-  messagingSenderId: "438021450087",
-  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.appspot.com",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
             };
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
+            
+            // COMMENT: Define the base URL for your GitHub Pages assets.
+            const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
 
             const container = document.getElementById('player-stats-container');
             const playerStatsDocRef = db.collection('scoreboard').doc('playerStats');
@@ -76,7 +77,6 @@
             function calculateAverageRating(players) {
                 const playersWithRatings = players.filter(p => p.statistics[0].games.rating && parseFloat(p.statistics[0].games.rating) > 0);
                 if (playersWithRatings.length === 0) return 'N/A';
-                
                 const totalRating = playersWithRatings.reduce((sum, p) => sum + parseFloat(p.statistics[0].games.rating), 0);
                 return (totalRating / playersWithRatings.length).toFixed(1);
             }
@@ -84,9 +84,7 @@
             function findStarPlayer(homePlayers, awayPlayers) {
                 const allPlayers = [...homePlayers, ...awayPlayers];
                 const playersWithRatings = allPlayers.filter(p => p.statistics[0].games.rating && parseFloat(p.statistics[0].games.rating) > 0);
-
                 if (playersWithRatings.length === 0) return null;
-
                 return playersWithRatings.reduce((best, current) => {
                     return parseFloat(current.statistics[0].games.rating) > parseFloat(best.statistics[0].games.rating) ? current : best;
                 });
@@ -94,10 +92,7 @@
 
             function buildGraphic(fixtureDetail, playersData) {
                 container.innerHTML = '';
-
-                if (!playersData || playersData.length < 2 || !fixtureDetail) {
-                    return;
-                }
+                if (!playersData || playersData.length < 2 || !fixtureDetail) return;
 
                 const homeTeamData = playersData.find(t => t.team.id === fixtureDetail.teams.home.id) || playersData[0];
                 const awayTeamData = playersData.find(t => t.team.id === fixtureDetail.teams.away.id) || playersData[1];
@@ -108,11 +103,15 @@
 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'stats-wrapper';
+                
+                // COMMENT: Updated background logo paths.
+                const homeLogoUrl = `${assetsBaseUrl}assets/logos/${fixtureDetail.teams.home.id}.png`;
+                const awayLogoUrl = `${assetsBaseUrl}assets/logos/${fixtureDetail.teams.away.id}.png`;
 
                 wrapper.innerHTML = `
                     <div class="background-logos">
-                        <img src="${fixtureDetail.teams.home.logo}" alt="${fixtureDetail.teams.home.name} Logo">
-                        <img src="${fixtureDetail.teams.away.logo}" alt="${fixtureDetail.teams.away.name} Logo">
+                        <img src="${homeLogoUrl}" alt="${fixtureDetail.teams.home.name} Logo" onerror="this.src='${fixtureDetail.teams.home.logo}'">
+                        <img src="${awayLogoUrl}" alt="${fixtureDetail.teams.away.name} Logo" onerror="this.src='${fixtureDetail.teams.away.logo}'">
                     </div>
                 `;
 
@@ -120,10 +119,11 @@
                 content.className = 'stats-content';
                 const fixtureDate = new Date(fixtureDetail.fixture.date);
                 const formattedDate = fixtureDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                const leagueLogoUrl = `${assetsBaseUrl}assets/leagues/${fixtureDetail.league.id}.png`;
 
                 content.innerHTML = `
                     <div class="top-bar">
-                         <img src="${fixtureDetail.league.logo}" alt="${fixtureDetail.league.name}" class="league-logo">
+                         <img src="${leagueLogoUrl}" alt="${fixtureDetail.league.name}" class="league-logo" onerror="this.src='${fixtureDetail.league.logo}'">
                         <div class="fixture-details">
                             <div class="fixture-name">
                                 <span class="team-name home">${fixtureDetail.teams.home.name}</span>
@@ -141,27 +141,14 @@
                 tablesArea.innerHTML = `
                     <div class="team-table-container">
                         <div class="team-header">
-                            <img src="${homeTeamData.team.logo}" alt="${homeTeamData.team.name} Logo">
+                            <img src="${homeLogoUrl}" alt="${homeTeamData.team.name} Logo" onerror="this.src='${homeTeamData.team.logo}'">
                             <h3>${homeTeamData.team.name}</h3>
                         </div>
                         <table class="player-table">
                             <thead>
-                                <tr>
-                                    <th>Player</th>
-                                    <th class="text-center">#</th>
-                                    <th class="text-center">Mins</th>
-                                    <th class="text-center">Rating</th>
-                                    <th class="text-center">Gls</th>
-                                    <th class="text-center">Ast</th>
-                                    <th class="text-center">Shots (On)</th>
-                                    <th class="text-center">KeyP</th>
-                                    <th class="text-center">Tkls</th>
-                                    <th class="text-center">Cards</th>
-                                </tr>
+                                <tr><th>Player</th><th class="text-center">#</th><th class="text-center">Mins</th><th class="text-center">Rating</th><th class="text-center">Gls</th><th class="text-center">Ast</th><th class="text-center">Shots (On)</th><th class="text-center">KeyP</th><th class="text-center">Tkls</th><th class="text-center">Cards</th></tr>
                             </thead>
-                            <tbody>
-                                ${generatePlayerRows(homeTeamData.players)}
-                            </tbody>
+                            <tbody>${generatePlayerRows(homeTeamData.players)}</tbody>
                         </table>
                         <div class="team-average-rating">
                             <span>Average Rating</span>
@@ -170,27 +157,14 @@
                     </div>
                     <div class="team-table-container">
                         <div class="team-header">
-                            <img src="${awayTeamData.team.logo}" alt="${awayTeamData.team.name} Logo">
+                            <img src="${awayLogoUrl}" alt="${awayTeamData.team.name} Logo" onerror="this.src='${awayTeamData.team.logo}'">
                             <h3>${awayTeamData.team.name}</h3>
                         </div>
                         <table class="player-table">
                            <thead>
-                                <tr>
-                                    <th>Player</th>
-                                    <th class="text-center">#</th>
-                                    <th class="text-center">Mins</th>
-                                    <th class="text-center">Rating</th>
-                                    <th class="text-center">Gls</th>
-                                    <th class="text-center">Ast</th>
-                                    <th class="text-center">Shots (On)</th>
-                                    <th class="text-center">KeyP</th>
-                                    <th class="text-center">Tkls</th>
-                                    <th class="text-center">Cards</th>
-                                </tr>
+                                <tr><th>Player</th><th class="text-center">#</th><th class="text-center">Mins</th><th class="text-center">Rating</th><th class="text-center">Gls</th><th class="text-center">Ast</th><th class="text-center">Shots (On)</th><th class="text-center">KeyP</th><th class="text-center">Tkls</th><th class="text-center">Cards</th></tr>
                             </thead>
-                            <tbody>
-                                ${generatePlayerRows(awayTeamData.players)}
-                            </tbody>
+                            <tbody>${generatePlayerRows(awayTeamData.players)}</tbody>
                         </table>
                         <div class="team-average-rating">
                             <span>Average Rating</span>
@@ -204,14 +178,15 @@
                 if (starPlayer) {
                     const spStats = starPlayer.statistics[0];
                     const spRating = parseFloat(spStats.games.rating).toFixed(1);
-                    const localImagePath = `/images/players/${starPlayer.player.id}.png`;
+                    // COMMENT: Updated star player image path.
+                    const starPlayerImageUrl = `${assetsBaseUrl}player_images/${starPlayer.player.id}.png`;
 
                     const starPlayerSection = document.createElement('div');
                     starPlayerSection.className = 'star-player-section';
                     starPlayerSection.innerHTML = `
                         <div class="star-player-title">⭐ Star Player</div>
                         <div class="star-player-content">
-                            <img src="${localImagePath}" class="star-player-photo" onerror="this.onerror=null; this.src='${starPlayer.player.photo}'; this.style.opacity=0.5;">
+                            <img src="${starPlayerImageUrl}" class="star-player-photo" onerror="this.onerror=null; this.src='${starPlayer.player.photo}';">
                             <div class="star-player-details">
                                 <div class="star-player-name">${starPlayer.player.name}</div>
                                 <div class="star-player-rating rating-cell ${getRatingColorClass(spRating)}">${spRating}</div>
@@ -242,33 +217,15 @@
                 players
                     .filter(p => p.statistics[0].games.minutes)
                     .sort((a, b) => b.statistics[0].games.minutes - a.statistics[0].games.minutes)
-                    // --- MODIFICATION: Changed slice limit from 15 to 16 ---
-                    // REASON: To correctly display 11 starters and a maximum of 5 substitutes, for a total of 16 players.
                     .slice(0, 16) 
                     .forEach(p => {
                         const stats = p.statistics[0];
                         const rating = stats.games.rating ? parseFloat(stats.games.rating).toFixed(1) : '-';
-                        
                         const ratingClass = getRatingColorClass(rating);
-
                         let cardDisplay = '-';
                         if (stats.cards.yellow > 0) cardDisplay = '<span class="card-yellow"></span>';
                         if (stats.cards.red > 0) cardDisplay = (cardDisplay !== '-') ? `${cardDisplay} <span class="card-red"></span>` : '<span class="card-red"></span>';
-
-                        rowsHtml += `
-                            <tr>
-                                <td>${p.player.name}</td>
-                                <td class="text-center">${stats.games.number || '-'}</td>
-                                <td class="text-center">${stats.games.minutes || '-'}</td>
-                                <td class="text-center"><span class="rating-cell ${ratingClass}">${rating}</span></td>
-                                <td class="text-center">${stats.goals.total || 0}</td>
-                                <td class="text-center">${stats.goals.assists || 0}</td>
-                                <td class="text-center">${stats.shots.total || 0} (${stats.shots.on || 0})</td>
-                                <td class="text-center">${stats.passes.key || 0}</td>
-                                <td class="text-center">${stats.tackles.total || 0}</td>
-                                <td class="text-center">${cardDisplay}</td>
-                            </tr>
-                        `;
+                        rowsHtml += `<tr><td>${p.player.name}</td><td class="text-center">${stats.games.number || '-'}</td><td class="text-center">${stats.games.minutes || '-'}</td><td class="text-center"><span class="rating-cell ${ratingClass}">${rating}</span></td><td class="text-center">${stats.goals.total || 0}</td><td class="text-center">${stats.goals.assists || 0}</td><td class="text-center">${stats.shots.total || 0} (${stats.shots.on || 0})</td><td class="text-center">${stats.passes.key || 0}</td><td class="text-center">${stats.tackles.total || 0}</td><td class="text-center">${cardDisplay}</td></tr>`;
                     });
                 return rowsHtml;
             }
