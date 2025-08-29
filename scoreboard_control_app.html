@@ -13,14 +13,14 @@
         body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; }
         .hidden { display: none !important; }
 
-        /* --- NEW: Login Form Styles --- */
+        /* --- Login Form Styles --- */
         #login-container { max-width: 400px; margin: 100px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         #login-container h1 { text-align: center; margin-top: 0; }
         #login-form { display: flex; flex-direction: column; gap: 15px; }
         #login-form input { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; }
         #login-error { color: #e74c3c; text-align: center; font-weight: bold; margin-top: 10px; }
 
-        /* --- Existing Styles --- */
+        /* --- Main App Styles --- */
         .control-panel-wrapper { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; }
         .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; padding-bottom: 15px; margin-bottom: 20px; }
         .panel-header h1 { margin: 0; font-size: 24px; }
@@ -183,48 +183,46 @@
                 auth.signOut();
             });
 
-            // This function contains all of your original app's logic.
-            // It will only be called after a successful login.
             function initializeApp() {
                 const TEAM_COLORS = {
-                  1595: 'rgb(85, 150, 71)', 1596: 'rgb(0, 102, 175)', 1597: 'rgb(222, 53, 56)', 1598: 'rgb(101, 44, 144)',
-                  1599: 'rgb(181, 152, 90)', 1600: 'rgb(245, 128, 44)', 1601: 'rgb(222, 53, 56)', 1602: 'rgb(217, 39, 46)',
-                  1603: 'rgb(15, 49, 92)', 1604: 'rgb(108, 169, 223)', 1605: 'rgb(0, 40, 85)', 1606: 'rgb(205, 34, 53)',
-                  1607: 'rgb(229, 26, 55)', 1608: 'rgb(141, 22, 44)', 1609: '#021D3D', 1610: 'rgb(149, 29, 64)',
-                  1611: 'rgb(80, 132, 185)', 1612: 'rgb(143, 201, 232)', 1613: 'rgb(254, 222, 0)', 1614: 'rgb(0, 85, 155)',
-                  1615: 'rgb(239, 62, 65)', 1616: 'rgb(193, 162, 92)', 1617: 'rgb(0, 70, 41)', 2242: 'rgb(241, 91, 36)',
-                  9568: 'rgb(252, 185, 205)', 9569: 'rgb(254, 219, 0)', 16489: 'rgb(0, 182, 75)', 18310: 'rgb(91, 192, 240)',
-                  20787: 'rgb(217, 2, 79)', 25484: 'rgb(11, 46, 75)', 'default': 'rgba(66, 65, 65, 1)' 
+                  1595:'rgb(85, 150, 71)',1596:'rgb(0, 102, 175)',1597:'rgb(222, 53, 56)',1598:'rgb(101, 44, 144)',
+                  1599:'rgb(181, 152, 90)',1600:'rgb(245, 128, 44)',1601:'rgb(222, 53, 56)',1602:'rgb(217, 39, 46)',
+                  1603:'rgb(15, 49, 92)',1604:'rgb(108, 169, 223)',1605:'rgb(0, 40, 85)',1606:'rgb(205, 34, 53)',
+                  1607:'rgb(229, 26, 55)',1608:'rgb(141, 22, 44)',1609:'#021D3D',1610:'rgb(149, 29, 64)',
+                  1611:'rgb(80, 132, 185)',1612:'rgb(143, 201, 232)',1613:'rgb(254, 222, 0)',1614:'rgb(0, 85, 155)',
+                  1615:'rgb(239, 62, 65)',1616:'rgb(193, 162, 92)',1617:'rgb(0, 70, 41)',2242:'rgb(241, 91, 36)',
+                  9568:'rgb(252, 185, 205)',9569:'rgb(254, 219, 0)',16489:'rgb(0, 182, 75)',18310:'rgb(91, 192, 240)',
+                  20787:'rgb(217, 2, 79)',25484:'rgb(11, 46, 75)','default':'rgba(66, 65, 65, 1)' 
                 };
                 const TEAM_COLORS_ALT = {
-                  1595: '#003C71', 1596: '#000000', 1597: '#003E7B', 1598: '#FFD100', 1599: '#0A2240', 1600: '#000000',
-                  1601: '#231F20', 1602: '#FFC700', 1603: '#92C1E9', 1604: '#002654', 1605: '#FFD200', 1606: '#013A81',
-                  1607: '#001E61', 1608: '#A48A5A', 1609: '#E51938', 1610: '#569FD3', 1611: '#002F65', 1612: '#58595B',
-                  1613: '#000000', 1614: '#000000', 1615: '#000000', 1616: '#000000', 1617: '#E1A023', 2242: '#003067',
-                  9568: '#000000', 9569: '#001F5B', 16489: '#000000', 18310: '#000000', 20787: '#001D4C',
-                  25484: '#F5831F', 'default': 'rgb(255, 255, 255)'
+                  1595:'#003C71',1596:'#000000',1597:'#003E7B',1598:'#FFD100',1599:'#0A2240',1600:'#000000',
+                  1601:'#231F20',1602:'#FFC700',1603:'#92C1E9',1604:'#002654',1605:'#FFD200',1606:'#013A81',
+                  1607:'#001E61',1608:'#A48A5A',1609:'#E51938',1610:'#569FD3',1611:'#002F65',1612:'#58595B',
+                  1613:'#000000',1614:'#000000',1615:'#000000',1616:'#000000',1617:'#E1A023',2242:'#003067',
+                  9568:'#000000',9569:'#001F5B',16489:'#000000',18310:'#000000',20787:'#001D4C',
+                  25484:'#F5831F','default':'rgb(255, 255, 255)'
                 };
                 const TEAM_INITIALS = {
-                  1595: 'SEA', 1596: 'SJE', 1597: 'DAL', 1598: 'ORL', 1599: 'PHI', 1600: 'HOU', 1601: 'TOR', 1602: 'NYRB',
-                  1603: 'VAN', 1604: 'NYC', 1605: 'LAG', 1606: 'RSL', 1607: 'CHI', 1608: 'ATL', 1609: 'NER', 1610: 'COL',
-                  1611: 'SKC', 1612: 'MIN', 1613: 'CLB', 1614: 'MTL', 1615: 'DCU', 1616: 'LAFC', 1617: 'POR', 2242: 'CIN',
-                  9568: 'MIA', 9569: 'NSH', 16489: 'AUS', 18310: 'CLT', 20787: 'STL', 25484: 'SAN', 'default': '???'
+                  1595:'SEA',1596:'SJE',1597:'DAL',1598:'ORL',1599:'PHI',1600:'HOU',1601:'TOR',1602:'NYRB',
+                  1603:'VAN',1604:'NYC',1605:'LAG',1606:'RSL',1607:'CHI',1608:'ATL',1609:'NER',1610:'COL',
+                  1611:'SKC',1612:'MIN',1613:'CLB',1614:'MTL',1615:'DCU',1616:'LAFC',1617:'POR',2242:'CIN',
+                  9568:'MIA',9569:'NSH',16489:'AUS',18310:'CLT',20787:'STL',25484:'SAN','default':'???'
                 };
                 const DC_UNITED_TEAM_ID = 1615;
                 const MLS_LEAGUE_ID = 253;
 
-                // --- Firebase and Game State Setup ---
                 const scoreboardDocRef = db.collection('scoreboard').doc('liveState');
-                // ... (rest of your Firebase refs)
-
-                let gameState = {}; 
-                // ... (rest of your state variables)
-                
-                // --- Element References ---
+                const dailyApiCallsSpan = document.getElementById('daily-api-calls');
+                const sessionApiCallsSpan = document.getElementById('session-api-calls');
+                const yearSelect = document.getElementById('year-select');
+                const getFixturesBtn = document.getElementById('get-fixtures-btn');
+                const fixtureSelect = document.getElementById('fixture-select');
+                const loadFixtureBtn = document.getElementById('load-fixture-btn');
                 const statusText = document.getElementById('status-text');
-                // ... (rest of your element references)
 
-                // --- Helper function for secure API calls ---
+                let sessionApiCallCount = 0;
+                let gameState = {};
+
                 async function fetchApiData(endpoint) {
                     const response = await fetch(`/api/${endpoint}`);
                     sessionApiCallCount++;
@@ -236,140 +234,82 @@
                     return response.json();
                 }
 
-            // --- UPDATED: All API-calling functions now use the helper ---
-            async function fetchApiStatus() {
-                try {
-                    const data = await fetchApiData('status');
-                    if (data.response && data.response.requests) {
-                        dailyApiCallsSpan.textContent = `${data.response.requests.current} / ${data.response.requests.limit_day}`;
+                async function fetchApiStatus() {
+                    try {
+                        const data = await fetchApiData('status');
+                        if (data.response && data.response.requests) {
+                            dailyApiCallsSpan.textContent = `${data.response.requests.current} / ${data.response.requests.limit_day}`;
+                        }
+                    } catch (err) {
+                        console.error("Error fetching API status:", err);
+                        dailyApiCallsSpan.textContent = 'Error';
                     }
-                } catch (err) {
-                    console.error("Error fetching API status:", err);
-                    dailyApiCallsSpan.textContent = 'Error';
                 }
-            }
 
-            function updateSessionCallCount() {
-                sessionApiCallsSpan.textContent = sessionApiCallCount;
-            }
+                function updateSessionCallCount() {
+                    sessionApiCallsSpan.textContent = sessionApiCallCount;
+                }
 
-            async function getFixturesForYear() {
-                const year = yearSelect.value;
-                statusText.textContent = `Checking for saved fixtures for ${year}...`;
-                const fixturesDocRef = db.collection('fixtures').doc(year);
-                try {
-                    const doc = await fixturesDocRef.get();
-                    if (doc.exists && doc.data().fixtures && doc.data().fixtures.length > 0 && doc.data().fixtures[0].competition) {
-                        statusText.textContent = `Fixtures for ${year} loaded from database.`;
-                        populateFixtureSelect(doc.data().fixtures);
-                    } else {
-                        statusText.textContent = `Fetching fixtures for ${year} from API...`;
-                        const data = await fetchApiData(`fixtures?season=${year}&team=${DC_UNITED_TEAM_ID}`);
-                        if (!data.response || data.response.length === 0) throw new Error(`No fixtures found for ${year}.`);
-                        const fixtures = data.response.map(f => ({
-                            id: f.fixture.id,
-                            name: `${f.teams.home.name} vs ${f.teams.away.name} (${new Date(f.fixture.date).toLocaleDateString()})`,
-                            competition: f.league.name
-                        }));
-                        await fixturesDocRef.set({ fixtures });
-                        statusText.textContent = `Fixtures for ${year} fetched and saved.`;
-                        populateFixtureSelect(fixtures);
+                async function getFixturesForYear() {
+                    const year = yearSelect.value;
+                    statusText.textContent = `Checking for saved fixtures for ${year}...`;
+                    const fixturesDocRef = db.collection('fixtures').doc(year);
+                    try {
+                        const doc = await fixturesDocRef.get();
+                        if (doc.exists && doc.data().fixtures && doc.data().fixtures.length > 0) {
+                            statusText.textContent = `Fixtures for ${year} loaded from database.`;
+                            populateFixtureSelect(doc.data().fixtures);
+                        } else {
+                            statusText.textContent = `Fetching fixtures for ${year} from API...`;
+                            const data = await fetchApiData(`fixtures?season=${year}&team=${DC_UNITED_TEAM_ID}`);
+                            if (!data.response || data.response.length === 0) throw new Error(`No fixtures found for ${year}.`);
+                            const fixtures = data.response.map(f => ({
+                                id: f.fixture.id,
+                                name: `${f.teams.home.name} vs ${f.teams.away.name} (${new Date(f.fixture.date).toLocaleDateString()})`,
+                                competition: f.league.name
+                            }));
+                            await fixturesDocRef.set({ fixtures });
+                            statusText.textContent = `Fixtures for ${year} fetched and saved.`;
+                            populateFixtureSelect(fixtures);
+                        }
+                    } catch (err) {
+                        console.error("Error getting fixtures:", err);
+                        statusText.textContent = `Error: ${err.message}`;
+                        statusText.style.color = 'red';
                     }
-                } catch (err) {
-                    console.error("Error getting fixtures:", err);
-                    statusText.textContent = `Error: ${err.message}`;
-                    statusText.style.color = 'red';
                 }
-            }
-            
-            // ... (populateFixtureSelect remains the same) ...
-
-            async function pollStatsData(fixtureId) {
-                console.log(`Polling for updated stats for fixture ${fixtureId}...`);
-                try {
-                    const [playerStatsData, matchStatsData, liveFixturesData, eventsData] = await Promise.all([
-                        fetchApiData(`fixtures/players?fixture=${fixtureId}`),
-                        fetchApiData(`fixtures/statistics?fixture=${fixtureId}`),
-                        fetchApiData(`fixtures?live=all`),
-                        fetchApiData(`fixtures/events?fixture=${fixtureId}`)
-                    ]);
-                    
-                    // ... (rest of the polling logic is the same, just without API keys) ...
-                    
-                    console.log("Live stats updated in Firestore.");
-                    statusText.textContent = `Stats updated at ${new Date().toLocaleTimeString()}`;
-                    fetchApiStatus();
-
-                } catch (err) {
-                    console.error("Error polling for stats:", err);
+                
+                function populateFixtureSelect(fixtures) {
+                    fixtureSelect.innerHTML = ''; 
+                    if (!fixtures || fixtures.length === 0) {
+                        fixtureSelect.innerHTML = '<option>No fixtures found</option>';
+                        return;
+                    }
+                    const groupedByCompetition = fixtures.reduce((acc, fixture) => {
+                        const comp = fixture.competition || 'Other';
+                        if (!acc[comp]) acc[comp] = [];
+                        acc[comp].push(fixture);
+                        return acc;
+                    }, {});
+                    for (const competition in groupedByCompetition) {
+                        const optgroup = document.createElement('optgroup');
+                        optgroup.label = competition;
+                        groupedByCompetition[competition].forEach(fixture => {
+                            const option = document.createElement('option');
+                            option.value = fixture.id;
+                            option.textContent = fixture.name;
+                            optgroup.appendChild(option);
+                        });
+                        fixtureSelect.appendChild(optgroup);
+                    }
                 }
-            }
 
-            async function fetchAllData(fixtureId) {
-                statusText.textContent = "Fetching all fixture data...";
-                statusText.style.color = '#555';
-                try {
-                    const [fixtureData, lineupsData, playerStatsData, matchStatsData, liveFixturesData, eventsData] = await Promise.all([
-                        fetchApiData(`fixtures?id=${fixtureId}`),
-                        fetchApiData(`fixtures/lineups?fixture=${fixtureId}`),
-                        fetchApiData(`fixtures/players?fixture=${fixtureId}`),
-                        fetchApiData(`fixtures/statistics?fixture=${fixtureId}`),
-                        fetchApiData(`fixtures?live=all`),
-                        fetchApiData(`fixtures/events?fixture=${fixtureId}`)
-                    ]);
-                    
-                    // ... (rest of the fetchAllData logic is the same, just without API keys) ...
-                    
-                } catch (err) {
-                    console.error("SCOREBOARD APP ERROR:", err);
-                    statusText.textContent = `Error: ${err.message}`;
-                    statusText.style.color = 'red';
-                }
-            }
-
-            // ... (loadLineupData, startPolling, stopPolling, and UI population functions remain the same) ...
-
-            showPlayerBtn.addEventListener('click', async () => {
-                // ... (logic for getting selectedPlayerId and fixtureId) ...
-                try {
-                    statusText.textContent = 'Fetching latest player stats...';
-                    const playerStatsData = await fetchApiData(`fixtures/players?fixture=${fixtureId}`);
-                    fixturePlayerStats = playerStatsData.response || [];
-                    statusText.textContent = 'Latest stats fetched. Building profile...';
-                } catch (err) {
-                    console.error("Error fetching latest player stats:", err);
-                    // ... (error handling) ...
-                }
-                // ... (rest of the showPlayerBtn logic remains the same) ...
-            });
-            
-            loadPlayerSeasonBtn.addEventListener('click', async () => {
-                // ... (logic for getting selectedPlayerId and fixture) ...
-                try {
-                    const playerData = await fetchApiData(`players?id=${selectedPlayerId}&season=${currentFixture.league.season}`);
-                    // ... (rest of the logic remains the same) ...
-                } catch (err) {
-                    // ... (error handling) ...
-                }
-            });
-
-            loadPredictionBtn.addEventListener('click', async () => {
-                // ... (logic for getting fixtureId) ...
-                try {
-                    const data = await fetchApiData(`predictions?fixture=${fixtureId}`);
-                    // ... (rest of the logic remains the same) ...
-                } catch (err) {
-                    // ... (error handling) ...
-                }
-            });
-            
-            // --- All other event listeners and game state logic remain the same ---
-            
-            // --- Initial Load ---
+                getFixturesBtn.addEventListener('click', getFixturesForYear);
+                
+                // --- Initial Load ---
                 scoreboardDocRef.get().then((doc) => {
                     if (doc.exists) gameState = doc.data();
                     else gameState = { homeScore: 0, awayScore: 0, minutes: 0, seconds: 0, period: '1H', showStoppage: false, event: null };
-                    // updateDisplays(); // Ensure you have this function from your original code
                     getFixturesForYear();
                     fetchApiStatus();
                 });
@@ -377,5 +317,4 @@
         });
     </script>
 </body>
-</html>
 </html>
