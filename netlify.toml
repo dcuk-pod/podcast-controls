@@ -1,6 +1,6 @@
 # This tells Netlify where your function files are located.
 [build]
-  functions = "netlify.com/functions/"
+  functions = "netlify/functions/"
 
 # This is the correct redirect rule for a Single-Page App.
 # It serves your main app on any path, BUT it ignores paths
