@@ -1,7 +1,11 @@
-[build]
-  functions = "netlify/functions/"
-
+# This rule correctly serves your app while allowing function calls
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/football-api/:splat"
+  from = "/*"
+  to = "/index.html"
   status = 200
+  force = false
+  conditions = {Path = {"^/(?!.netlify).*$"}} # This line is the critical fix
+
+# This tells Netlify where your functions are located
+[functions]
+  directory = "netlify/functions/"
