@@ -1,7 +1,13 @@
+# This tells Netlify where your function files are located.
 [build]
-  functions = "netlify/functions/"
+  functions = "netlify.com/functions/"
 
+# This is the correct redirect rule for a Single-Page App.
+# It serves your main app on any path, BUT it ignores paths
+# that are for Netlify Functions, which is what we want.
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/football-api/:splat"
+  from = "/*"
+  to = "/index.html"
   status = 200
+  force = false
+  conditions = {Path = {"^/(?!.netlify).*$"}}
