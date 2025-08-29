@@ -398,7 +398,6 @@
                 const playerProfileSeasonDocRef = db.collection('scoreboard').doc('playerProfileSeason');
                 const predictionVisibilityDocRef = db.collection('scoreboard').doc('predictionVisibility');
                 const predictionDataDocRef = db.collection('scoreboard').doc('predictionData');
-                // COMMENT: A new document reference is added for the standings data. This will hold the league table.
                 const standingsDataDocRef = db.collection('scoreboard').doc('standingsData');
 
                 let gameState = {}; 
@@ -1003,10 +1002,8 @@
                     statusText.style.color = '#555';
                 });
                 
-                // COMMENT: This is the updated 'Load Data' button logic for the prediction graphic.
                 loadPredictionBtn.addEventListener('click', async () => {
                     const fixtureId = fixtureSelect.value;
-                    // COMMENT: It now also checks if a `currentFixture` has been loaded, which is needed to get the league ID for the standings.
                     if (!fixtureId || !currentFixture) {
                         statusText.textContent = "Please select and load a fixture first.";
                         statusText.style.color = 'red';
@@ -1015,31 +1012,28 @@
                     statusText.textContent = "Loading prediction & standings data...";
                     statusText.style.color = '#555';
                     try {
-                        // COMMENT: `Promise.all` is used to fetch both the prediction and standings data from the API at the same time. This is more efficient than doing them one after another.
                         const [predictionData, standingsData] = await Promise.all([
                             fetchApiProxy(`/predictions?fixture=${fixtureId}`),
                             fetchApiProxy(`/standings?league=${currentFixture.league.id}&season=${currentFixture.league.season}`)
                         ]);
 
-                        // COMMENT: Error handling to make sure both API calls returned the data we need.
                         if (!predictionData.response || predictionData.response.length === 0) {
                             throw new Error("Prediction data not found for this fixture.");
                         }
-                        if (!standingsData.response || standingsData.response.length === 0) {
+                        if (!standingsData.response || standingsData.response.length === 0 || !standingsData.response[0].league.standings) {
                             throw new Error("Standings data not found for this league/season.");
                         }
                         
-                        // COMMENT: The fetched prediction data is saved to its document in Firestore.
                         await predictionDataDocRef.set({ data: predictionData.response[0] });
                         
-                        // COMMENT: The fetched standings data is also saved to its own document in Firestore.
-                        // The structure `standingsData.response[0].league.standings[0]` is used to extract the actual table from the API response.
-                        await standingsDataDocRef.set({ data: standingsData.response[0].league.standings[0] });
+                        // COMMENT: FIX - The API can return multiple standings tables (e.g., for different conferences).
+                        // We use .flat() to merge them all into a single array so we can find any team.
+                        const allStandings = standingsData.response[0].league.standings.flat();
+                        await standingsDataDocRef.set({ data: allStandings });
 
                         statusText.textContent = "Prediction and standings data loaded successfully.";
                         statusText.style.color = 'green';
                     } catch (err) {
-                        // COMMENT: If anything goes wrong, an error is logged and a message is shown to the user.
                         console.error("Error loading prediction/standings data:", err);
                         statusText.textContent = `Error: ${err.message}`;
                         statusText.style.color = 'red';
@@ -1059,3 +1053,4 @@
     </script>
 </body>
 </html>
+
