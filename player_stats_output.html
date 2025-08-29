@@ -6,7 +6,6 @@
     <title>Player Statistics - Live</title>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-    <script src="firebase-init.js"></script>
     <link rel="stylesheet" href="player_stats.css">
 </head>
 <body>
@@ -15,6 +14,19 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- NEW: Firebase config is now embedded directly in the script ---
+            // REASON: This removes the need for an extra file and keeps the overlay self-contained.
+            const firebaseConfig = {
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+  authDomain: "scoreboard-control.firebaseapp.com",
+  projectId: "scoreboard-control",
+  storageBucket: "scoreboard-control.firebasestorage.app",
+  messagingSenderId: "438021450087",
+  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
             const container = document.getElementById('player-stats-container');
             const playerStatsDocRef = db.collection('scoreboard').doc('playerStats');
             const playerStatsDataDocRef = db.collection('scoreboard').doc('playerStatsData');
@@ -192,14 +204,14 @@
                 if (starPlayer) {
                     const spStats = starPlayer.statistics[0];
                     const spRating = parseFloat(spStats.games.rating).toFixed(1);
-                    const localImagePath = `images/players/${starPlayer.player.id}.png`;
+                    const localImagePath = `/images/players/${starPlayer.player.id}.png`;
 
                     const starPlayerSection = document.createElement('div');
                     starPlayerSection.className = 'star-player-section';
                     starPlayerSection.innerHTML = `
                         <div class="star-player-title">⭐ Star Player</div>
                         <div class="star-player-content">
-                            <img src="${localImagePath}" class="star-player-photo" onerror="this.style.display='none'">
+                            <img src="${localImagePath}" class="star-player-photo" onerror="this.onerror=null; this.src='${starPlayer.player.photo}'; this.style.opacity=0.5;">
                             <div class="star-player-details">
                                 <div class="star-player-name">${starPlayer.player.name}</div>
                                 <div class="star-player-rating rating-cell ${getRatingColorClass(spRating)}">${spRating}</div>
@@ -227,11 +239,11 @@
 
             function generatePlayerRows(players) {
                 let rowsHtml = '';
-                // --- MODIFICATION: Changed slice limit from 15 to 16 ---
-                // REASON: To correctly display 11 starters and a maximum of 5 substitutes.
                 players
                     .filter(p => p.statistics[0].games.minutes)
                     .sort((a, b) => b.statistics[0].games.minutes - a.statistics[0].games.minutes)
+                    // --- MODIFICATION: Changed slice limit from 15 to 16 ---
+                    // REASON: To correctly display 11 starters and a maximum of 5 substitutes, for a total of 16 players.
                     .slice(0, 16) 
                     .forEach(p => {
                         const stats = p.statistics[0];

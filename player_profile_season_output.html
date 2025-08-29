@@ -6,7 +6,6 @@
     <title>Player Profile - Season</title>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-    <script src="firebase-init.js"></script>
     <link rel="stylesheet" href="player_profile_season.css">
 </head>
 <body>
@@ -16,6 +15,18 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- NEW: Firebase config is now embedded directly in the script ---
+            const firebaseConfig = {
+            apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+  authDomain: "scoreboard-control.firebaseapp.com",
+  projectId: "scoreboard-control",
+  storageBucket: "scoreboard-control.firebasestorage.app",
+  messagingSenderId: "438021450087",
+  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
             const container = document.getElementById('player-profile-container');
             const playerProfileSeasonDocRef = db.collection('scoreboard').doc('playerProfileSeason');
 
@@ -27,7 +38,8 @@
                 }
             });
 
-            // --- NEW FUNCTION: Determines the CSS class based on the rating value ---
+            // --- NEW: Helper function to determine rating color ---
+            // REASON: This function takes the rating and returns a CSS class for color-coding.
             function getRatingColorClass(rating) {
                 const ratingValue = parseFloat(rating);
                 if (isNaN(ratingValue)) return 'rating-default';
@@ -37,7 +49,7 @@
                 if (ratingValue <= 7.99) return 'rating-light-green';
                 if (ratingValue <= 8.99) return 'rating-dark-green';
                 if (ratingValue <= 10) return 'rating-blue';
-                return 'rating-default'; // Fallback
+                return 'rating-default';
             }
 
             function buildProfile(data) {
@@ -52,7 +64,7 @@
                 }
                 
                 const isGoalkeeper = mlsStats.games.position === 'Goalkeeper';
-                const localImagePath = `images/players/${playerInfo.id}.png`;
+                const localImagePath = `/images/players/${playerInfo.id}.png`;
                 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'profile-wrapper';
@@ -97,6 +109,7 @@
 
             function generateStatsCard(stat, isGoalkeeper) {
                 if (!stat) return '';
+                // UPDATED: The 'Rating' line now calls a special function to apply color.
                 return `
                     <div class="stats-card">
                         <div class="stats-card-header">
@@ -148,10 +161,11 @@
                 `;
             }
 
-            // --- NEW FUNCTION: A special version of createStatItem just for the rating ---
+            // --- NEW: A special function for creating the rating stat item ---
+            // REASON: This allows us to add the color class specifically to the rating value.
             function createRatingStatItem(label, value) {
-                const displayValue = (value !== null && value !== undefined) ? value : '-';
-                const colorClass = getRatingColorClass(value); // Get the color class
+                const displayValue = (value !== null && value !== undefined) ? parseFloat(value).toFixed(2) : '-';
+                const colorClass = getRatingColorClass(value);
                 return `
                     <div class="stat-item">
                         <span class="label">${label}</span>

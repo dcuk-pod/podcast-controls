@@ -5,7 +5,6 @@
     <title>Combined Lineups</title>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-    <script src="firebase-init.js"></script>
     <link rel="stylesheet" href="combined_lineup.css">
 </head>
 <body>
@@ -14,6 +13,19 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- NEW: Firebase config is now embedded directly in the script ---
+            // REASON: This removes the need for an extra file and keeps the overlay self-contained.
+            const firebaseConfig = {
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+  authDomain: "scoreboard-control.firebaseapp.com",
+  projectId: "scoreboard-control",
+  storageBucket: "scoreboard-control.firebasestorage.app",
+  messagingSenderId: "438021450087",
+  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
             const lineupContainer = document.getElementById('lineup-container');
             const combinedLineupDocRef = db.collection('scoreboard').doc('combinedLineup');
             const combinedLineupDataDocRef = db.collection('scoreboard').doc('combinedLineupData');
@@ -102,7 +114,7 @@
                     playersInRow.forEach(player => {
                         const kitColor = teamLineup.team.colors?.player?.primary || '333333';
                         const numColor = teamLineup.team.colors?.player?.number || 'ffffff';
-                        const localImagePath = `images/players/${player.id}.png`;
+                        const localImagePath = `/images/players/${player.id}.png`;
 
                         playersHTML += `
                             <div class="player-dot">
@@ -117,7 +129,6 @@
                     columnsHTML += columnDiv.outerHTML;
                 });
                 
-                // --- MODIFICATION: Removed the formation title from this section ---
                 return `
                     <div class="pitch-container">
                         <div class="pitch">${columnsHTML}</div>

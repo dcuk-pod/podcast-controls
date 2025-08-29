@@ -5,7 +5,6 @@
     <title>Match Events Ticker</title>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-    <script src="firebase-init.js"></script>
     <link rel="stylesheet" href="ticker_style.css">
 </head>
 <body>
@@ -13,6 +12,19 @@
         </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- NEW: Firebase config is now embedded directly in the script ---
+            // REASON: This removes the need for an extra file and keeps the overlay self-contained.
+            const firebaseConfig = {
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+  authDomain: "scoreboard-control.firebaseapp.com",
+  projectId: "scoreboard-control",
+  storageBucket: "scoreboard-control.firebasestorage.app",
+  messagingSenderId: "438021450087",
+  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
             const wrapper = document.getElementById('ticker-container-wrapper');
             const matchEventsDocRef = db.collection('scoreboard').doc('matchEvents');
             const matchEventsDataDocRef = db.collection('scoreboard').doc('matchEventsData');
@@ -72,9 +84,10 @@
                 if (!events || !eventsList) return;
                 
                 // --- MODIFICATION START ---
-                // REASON: Instead of just reversing, we now filter out bad data and properly sort by time.
+                // REASON: Instead of just reversing the array, we now filter out bad data and properly sort by time.
+                // This ensures the ticker is always accurate and clean.
                 // 1. .filter() removes any events where the player name is missing (or the 'assist' name for subs).
-                // 2. .sort() orders the events by elapsed time descending. If minutes are the same, it uses extra time.
+                // 2. .sort() orders the events by elapsed time descending. If minutes are the same, it uses extra time as a tie-breaker.
                 const sortedEvents = events
                     .filter(event => {
                         if (event.type === 'subst') {

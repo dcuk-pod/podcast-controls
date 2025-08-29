@@ -6,7 +6,6 @@
     <title>Player Profile Output</title>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-    <script src="firebase-init.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
 
@@ -130,16 +129,17 @@
         }
 
         /* --- NEW: Styles for the color-coded rating --- */
+        /* REASON: These styles give the player rating a dynamic background color based on performance. */
         .value-v2.rating {
             padding: 2px 12px;
             border-radius: 16px;
             color: white;
             font-weight: 800;
-            display: inline-block; /* Allows padding and border-radius to work */
-            margin: 0 auto; /* Helps with centering if needed */
+            display: inline-block;
+            margin: 0 auto;
         }
         .rating-red { background-color: #e74c3c; } /* Red for 0-5.99 */
-        .rating-amber { background-color: #f39c12; color: #1a2c2c; } /* Amber for 6-6.99 */
+        .rating-amber { background-color: #f39c12; } /* Amber for 6-6.99 */
         .rating-light-green { background-color: #2ecc71; } /* Light Green for 7-7.99 */
         .rating-dark-green { background-color: #27ae60; } /* Dark Green for 8-8.99 */
         .rating-blue { background-color: #3498db; } /* Blue for 9-10 */
@@ -149,11 +149,22 @@
 <body>
     
     <div id="player-profile-container">
-        <!-- The profile will be built here by JavaScript -->
-    </div>
+        </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- NEW: Firebase config is now embedded directly in the script ---
+            const firebaseConfig = {
+            apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+  authDomain: "scoreboard-control.firebaseapp.com",
+  projectId: "scoreboard-control",
+  storageBucket: "scoreboard-control.firebasestorage.app",
+  messagingSenderId: "438021450087",
+  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
             const container = document.getElementById('player-profile-container');
             const playerProfileDocRef = db.collection('scoreboard').doc('playerProfile');
 
@@ -182,7 +193,7 @@
                 const stats = data.stats;
                 const team = data.team;
                 
-                const localImagePath = `images/players/${playerInfo.id}.png`;
+                const localImagePath = `/images/players/${playerInfo.id}.png`;
                 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'profile-wrapper-v2';
@@ -235,7 +246,7 @@
             }
 
             // --- NEW: Helper function to determine rating color ---
-            // This function takes the rating and returns the correct CSS class based on your criteria.
+            // REASON: This function takes the rating and returns the correct CSS class based on performance.
             function getRatingColorClass(ratingStr) {
                 const rating = parseFloat(ratingStr);
                 if (isNaN(rating)) return ''; // Return no class if the rating isn't a number
@@ -247,11 +258,11 @@
             }
 
             // --- UPDATED: createStatItem now handles rating colors ---
+            // REASON: This function now uses the helper above to apply a dynamic color class to the rating stat.
             function createStatItem(label, value) {
                 const displayValue = (value !== null && value !== undefined) ? value : '-';
                 let valueClass = 'value-v2';
 
-                // If the stat is 'Rating', we get its color class and add it to the element.
                 if (label === 'Rating') {
                     const ratingClass = getRatingColorClass(displayValue);
                     if(ratingClass) {
