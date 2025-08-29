@@ -5,10 +5,9 @@
     <title>Scoreboard Output</title>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-    <script src="firebase-init.js"></script>
     <link rel="stylesheet" href="scoreboard.css">
     <style>
-        /* --- NEW: Visibility control for the scoreboard --- */
+        /* Visibility control for the scoreboard */
         #scoreboard-main-container {
             opacity: 0;
             transition: opacity 0.5s ease;
@@ -20,7 +19,6 @@
 </head>
 <body class="output">
 
-    <!-- UPDATED: The main container now has an ID for easy selection -->
     <div id="scoreboard-main-container" class="scoreboard-container">
         <div class="scoreboard-wrapper" id="scoreboard-wrapper">
             <div class="team-display home">
@@ -61,10 +59,130 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Element References ---
+            // --- NEW: Firebase config is now embedded directly in the script ---
+            // REASON: This removes the need for an extra file and keeps the overlay self-contained.
+            const TEAM_COLORS = {
+  1595: 'rgb(85, 150, 71)',     // Seattle Sounders FC (Green)
+  1596: 'rgb(0, 102, 175)',     // San Jose Earthquakes (Blue)
+  1597: 'rgb(222, 53, 56)',     // FC Dallas (Red)
+  1598: 'rgb(101, 44, 144)',    // Orlando City SC (Purple)
+  1599: 'rgb(181, 152, 90)',    // Philadelphia Union (Gold)
+  1600: 'rgb(245, 128, 44)',    // Houston Dynamo FC (Orange)
+  1601: 'rgb(222, 53, 56)',     // Toronto FC (Red)
+  1602: 'rgb(217, 39, 46)',     // New York Red Bulls (Red)
+  1603: 'rgb(15, 49, 92)',      // Vancouver Whitecaps FC (Dark Blue)
+  1604: 'rgb(108, 169, 223)',   // New York City FC (Sky Blue)
+  1605: 'rgb(0, 40, 85)',       // LA Galaxy (Dark Blue)
+  1606: 'rgb(205, 34, 53)',     // Real Salt Lake (Red)
+  1607: 'rgb(229, 26, 55)',     // Chicago Fire FC (Red)
+  1608: 'rgb(141, 22, 44)',     // Atlanta United FC (Dark Red)
+  1609: '#021D3D',     // New England Revolution (Dark Blue)
+  1610: 'rgb(149, 29, 64)',     // Colorado Rapids (Burgundy)
+  1611: 'rgb(80, 132, 185)',    // Sporting Kansas City (Light Blue)
+  1612: 'rgb(143, 201, 232)',   // Minnesota United FC (Sky Blue)
+  1613: 'rgb(254, 222, 0)',     // Columbus Crew (Yellow)
+  1614: 'rgb(0, 85, 155)',      // CF Montréal (Blue)
+  1615: 'rgb(239, 62, 65)',      // D.C. United (Red)
+  1616: 'rgb(193, 162, 92)',     // Los Angeles FC (Gold)
+  1617: 'rgb(0, 70, 41)',        // Portland Timbers (Green)
+  2242: 'rgb(241, 91, 36)',      // FC Cincinnati (Orange)
+  9568: 'rgb(252, 185, 205)',    // Inter Miami CF (Pink)
+  9569: 'rgb(254, 219, 0)',      // Nashville SC (Yellow)
+  16489: 'rgb(0, 182, 75)',      // Austin FC (Bright Green)
+  18310: 'rgb(91, 192, 240)',    // Charlotte FC (Blue)
+  20787: 'rgb(217, 2, 79)',      // St. Louis City SC (Magenta)
+  25484: 'rgb(11, 46, 75)',      // San Diego FC (Dark Blue)
+ 
+
+  // Add any other team IDs and their colors here...
+
+  // A default color for any team not in this list
+  'default': 'rgba(66, 65, 65, 1)' 
+};
+const TEAM_COLORS_ALT = {
+  1595: '#003C71',     // Seattle Sounders FC (Sounder Blue)
+  1596: '#000000',     // San Jose Earthquakes (Black)
+  1597: '#003E7B',     // FC Dallas (Brazos Blue)
+  1598: '#FFD100',     // Orlando City SC (Gold)
+  1599: '#0A2240',     // Philadelphia Union (Union Blue)
+  1600: '#000000',     // Houston Dynamo FC (Black)
+  1601: '#231F20',     // Toronto FC (Onyx/Dark Grey)
+  1602: '#FFC700',     // New York Red Bulls (Yellow)
+  1603: '#92C1E9',     // Vancouver Whitecaps FC (Whitecaps Blue)
+  1604: '#002654',     // New York City FC (Midnight Blue)
+  1605: '#FFD200',     // LA Galaxy (Galaxy Gold)
+  1606: '#013A81',     // Real Salt Lake (Cobalt Blue)
+  1607: '#001E61',     // Chicago Fire FC (Navy Blue)
+  1608: '#A48A5A',     // Atlanta United FC (Dark Gold)
+  1609: '#E51938',     // New England Revolution (Revolution Red)
+  1610: '#569FD3',     // Colorado Rapids (Sky Blue)
+  1611: '#002F65',     // Sporting Kansas City (Dark Indigo)
+  1612: '#58595B',     // Minnesota United FC (Iron Grey)
+  1613: '#000000',     // Columbus Crew (Black)
+  1614: '#000000',     // CF Montréal (Black)
+  1615: '#000000',     // D.C. United (Black)
+  1616: '#000000',     // Los Angeles FC (Black)
+  1617: '#E1A023',     // Portland Timbers (Timbers Gold)
+  2242: '#003067',     // FC Cincinnati (FCC Blue)
+  9568: '#000000',     // Inter Miami CF (Black)
+  9569: '#001F5B',     // Nashville SC (Acoustic Blue)
+  16489: '#000000',    // Austin FC (Black)
+  18310: '#000000',    // Charlotte FC (Black)
+  20787: '#001D4C',    // St. Louis City SC (River Blue)
+  25484: '#F5831F',    // San Diego FC (Horizon Orange)
+  'default': 'rgb(255, 255, 255)' // A default alternate color
+};
+const TEAM_INITIALS = {
+  1595: 'SEA',   // Seattle Sounders FC
+  1596: 'SJE',   // San Jose Earthquakes
+  1597: 'DAL',   // FC Dallas
+  1598: 'ORL',   // Orlando City SC
+  1599: 'PHI',   // Philadelphia Union
+  1600: 'HOU',   // Houston Dynamo FC
+  1601: 'TOR',   // Toronto FC
+  1602: 'NYRB',  // New York Red Bulls
+  1603: 'VAN',   // Vancouver Whitecaps FC
+  1604: 'NYC',   // New York City FC
+  1605: 'LAG',   // LA Galaxy
+  1606: 'RSL',   // Real Salt Lake
+  1607: 'CHI',   // Chicago Fire FC
+  1608: 'ATL',   // Atlanta United FC
+  1609: 'NER',   // New England Revolution
+  1610: 'COL',   // Colorado Rapids
+  1611: 'SKC',   // Sporting Kansas City
+  1612: 'MIN',   // Minnesota United FC
+  1613: 'CLB',   // Columbus Crew
+  1614: 'MTL',   // CF Montréal
+  1615: 'DCU',   // D.C. United
+  1616: 'LAFC',  // Los Angeles FC
+  1617: 'POR',   // Portland Timbers
+  2242: 'CIN',   // FC Cincinnati
+  9568: 'MIA',   // Inter Miami CF
+  9569: 'NSH',   // Nashville SC
+  16489: 'AUS',  // Austin FC
+  18310: 'CLT',  // Charlotte FC
+  20787: 'STL',  // St. Louis City SC
+  25484: 'SAN',  // San Diego FC
+  // Add all other team initials here...
+  'default': '???'
+};
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+  authDomain: "scoreboard-control.firebaseapp.com",
+  projectId: "scoreboard-control",
+  storageBucket: "scoreboard-control.firebasestorage.app",
+  messagingSenderId: "438021450087",
+  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            
+
+            // --- Element References (no changes) ---
             const scoreboardMainContainer = document.getElementById('scoreboard-main-container');
             const homeScore = document.getElementById('home-score-output');
             const awayScore = document.getElementById('away-score-output');
@@ -85,14 +203,14 @@
             const eventPlayerDetails = document.getElementById('event-player-details');
             const eventCardIcon = document.getElementById('event-card-icon');
             
-            // --- Firestore Document References ---
+            // --- Firestore Document References (no changes) ---
             const liveStateDocRef = db.collection('scoreboard').doc('liveState');
             const fixtureDocRef = db.collection('scoreboard').doc('currentFixture');
-            const scoreboardVisibilityDocRef = db.collection('scoreboard').doc('visibility'); // New ref
+            const scoreboardVisibilityDocRef = db.collection('scoreboard').doc('visibility');
             
             let lastEventId = null;
 
-            // --- NEW: Listener for Scoreboard Visibility ---
+            // --- Listener for Scoreboard Visibility (no changes) ---
             scoreboardVisibilityDocRef.onSnapshot((doc) => {
                 if (doc.exists && doc.data().show) {
                     scoreboardMainContainer.classList.add('visible');
@@ -101,7 +219,7 @@
                 }
             });
 
-            // --- Listener for Fixture Data ---
+            // --- Listener for Fixture Data (no changes) ---
             fixtureDocRef.onSnapshot((doc) => {
                 if (doc.exists) {
                     const fixture = doc.data();
@@ -109,6 +227,7 @@
                         const homeId = fixture.teams.home.id;
                         const awayId = fixture.teams.away.id;
 
+                        // NOTE: These lines now use the TEAM_INITIALS and TEAM_COLORS constants defined above
                         homeInitials.textContent = TEAM_INITIALS[homeId] || '???';
                         awayInitials.textContent = TEAM_INITIALS[awayId] || '???';
                         homeLogo.src = `assets/logos/${homeId}.png`;
@@ -127,7 +246,7 @@
                 }
             });
 
-            // --- Listener for Live Game State ---
+            // --- Listener for Live Game State (no changes) ---
             liveStateDocRef.onSnapshot((doc) => {
                 if (doc.exists) {
                     const state = doc.data();
@@ -173,6 +292,7 @@
                 }
             });
             
+            // --- Event Animation Function (no changes) ---
             function triggerEventAnimation(event) {
                 if (event.type === 'goal') {
                     const teamId = event.data.teamId;
