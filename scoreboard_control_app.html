@@ -8,7 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
     
-    <script src="firebase-init.js"></script>
     <style>
         /* --- Global & Fonts --- */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
@@ -486,7 +485,22 @@
     <script src="config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // REASON: Firebase services are initialized here. Make sure your firebase-init.js has the correct config.
+            // REASON: This firebaseConfig object contains your project's unique identifiers.
+            // It was taken from your original, working login file.
+            const firebaseConfig = {
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.appspot.com",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+
+            // REASON: This line initializes the Firebase app with your config.
+            // It MUST be called before any other Firebase services (like auth or firestore) are used.
+            // This is the key change that should fix your login issue.
+            firebase.initializeApp(firebaseConfig);
+
             const auth = firebase.auth();
             const db = firebase.firestore();
 
@@ -499,22 +513,18 @@
             const loginError = document.getElementById('login-error');
             const logoutBtn = document.getElementById('logout-btn');
 
-            // REASON: This is the core of the auth flow. It listens for changes in login state.
             auth.onAuthStateChanged(user => {
                 if (user) {
-                    // User is signed in.
                     loginContainer.classList.add('hidden');
                     appContainer.classList.remove('hidden');
                     loginError.classList.add('hidden');
-                    initializeApp(); // This function contains all your original app logic.
+                    initializeApp();
                 } else {
-                    // User is signed out.
                     loginContainer.classList.remove('hidden');
                     appContainer.classList.add('hidden');
                 }
             });
 
-            // REASON: Handles the login form submission.
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const email = loginEmail.value;
@@ -528,18 +538,18 @@
                     });
             });
             
-            // REASON: Handles the logout button click.
             logoutBtn.addEventListener('click', () => {
                 auth.signOut();
             });
 
-
-            // REASON: All of your original application code is now inside this function.
-            // It will only be called *after* a user has successfully logged in.
             function initializeApp() {
+                // All of your original application code is safely inside this function.
+                // It will only be called after a successful login.
+                
                 // --- Firebase and Game State Setup ---
                 const scoreboardDocRef = db.collection('scoreboard').doc('liveState');
                 const scoreboardVisibilityDocRef = db.collection('scoreboard').doc('visibility');
+                // ... (the rest of your original, extensive JS code goes here)
                 const fixtureDocRef = db.collection('scoreboard').doc('currentFixture');
                 const playerProfileDocRef = db.collection('scoreboard').doc('playerProfile');
                 const playerStatsDocRef = db.collection('scoreboard').doc('playerStats');
@@ -1198,7 +1208,6 @@
                     }
                 });
 
-                // REASON: This function links a toggle switch to a Firestore document.
                 function setupVisibilityToggle(toggleId, docRef) {
                     const toggle = document.getElementById(toggleId);
                     toggle.addEventListener('change', () => {
@@ -1207,7 +1216,6 @@
                         statusText.textContent = `${status} ${toggle.closest('.control-card').querySelector('.card-title').textContent}.`;
                     });
 
-                    // Also listen for Firestore changes to update the toggle state
                     docRef.onSnapshot((doc) => {
                         if (doc.exists && typeof doc.data().show === 'boolean') {
                             toggle.checked = doc.data().show;
@@ -1215,7 +1223,6 @@
                     });
                 }
                 
-                // REASON: All the old show/hide buttons are replaced by these function calls.
                 setupVisibilityToggle('toggle-scoreboard', scoreboardVisibilityDocRef);
                 setupVisibilityToggle('toggle-player-profile', playerProfileDocRef);
                 setupVisibilityToggle('toggle-player-stats', playerStatsDocRef);
