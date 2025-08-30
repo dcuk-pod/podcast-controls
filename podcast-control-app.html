@@ -1,74 +1,117 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="en"> <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Podcast Visuals Control App</title>
-    <!-- Firebase SDKs -->
+    
+    <link rel="manifest" href="manifest-podcast.json">
+    <meta name="theme-color" id="theme-color-meta" content="#3498db">
+    
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
-        body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; box-sizing: border-box; }
         
-        /* --- Login Styles --- */
+        /* COMMENT: CSS Variables for Light/Dark Mode. Same as the other app for consistency. */
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg-color: #ffffff;
+            --text-color: #333333;
+            --text-color-light: #555555;
+            --border-color: #e0e0e0;
+            --border-color-light: #eeeeee;
+            --input-border-color: #cccccc;
+            --header-bg-color: #ffffff;
+            --api-bar-bg-color: #e9ecef;
+            --fixture-bg-color: #f9f9f9;
+            --primary-color: #3498db;
+            --primary-hover-color: #2980b9;
+            --danger-color: #e74c3c;
+            --danger-hover-color: #c0392b;
+            --success-color: #2ecc71;
+            --success-hover-color: #27ae60;
+            --disabled-color: #bdc3c7;
+            --slider-bg-color: #ccc;
+        }
+
+        html[data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --text-color-light: #bbbbbb;
+            --border-color: #3a3a3a;
+            --border-color-light: #2c2c2c;
+            --input-border-color: #444444;
+            --header-bg-color: #1e1e1e;
+            --api-bar-bg-color: #2c2c2c;
+            --fixture-bg-color: #252525;
+            --primary-color: #3498db;
+            --primary-hover-color: #4aa9e4;
+            --danger-color: #e74c3c;
+            --danger-hover-color: #f06a5a;
+            --success-color: #2ecc71;
+            --success-hover-color: #48d989;
+            --disabled-color: #555;
+            --slider-bg-color: #555;
+        }
+        
+        /* COMMENT: All styles below now use the CSS variables for color */
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; box-sizing: border-box; transition: background-color 0.3s, color 0.3s; }
         .hidden { display: none !important; }
-        #login-container { max-width: 400px; margin: 100px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        #login-container { max-width: 400px; margin: 100px auto; background: var(--card-bg-color); padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         #login-container h1 { text-align: center; margin-top: 0; }
         #login-form { display: flex; flex-direction: column; gap: 15px; }
-        #login-form input { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; }
-        #login-error { color: #e74c3c; text-align: center; font-weight: bold; margin-top: 10px; }
-        
-        /* --- Main App Styles --- */
-        .control-panel-wrapper { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; }
-        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e0e0e0; padding-bottom: 15px; margin-bottom: 20px; }
+        #login-form input { padding: 12px; font-size: 16px; border: 1px solid var(--input-border-color); border-radius: 5px; background-color:var(--bg-color); color:var(--text-color); }
+        #login-error { color: var(--danger-color); text-align: center; font-weight: bold; margin-top: 10px; }
+        .control-panel-wrapper { max-width: 1200px; margin: 0 auto; background: var(--header-bg-color); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         .panel-header h1 { margin: 0; font-size: 24px; }
-        .api-status-bar { background-color: #e9ecef; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; font-size: 14px; text-align: center; }
+        .header-controls { display: flex; align-items: center; gap: 15px; }
+        .api-status-bar { background-color: var(--api-bar-bg-color); padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; font-size: 14px; text-align: center; }
         .api-status-bar .session-calls { text-align: left; }
         .api-status-bar .daily-calls { text-align: right; }
         .api-status-bar span { font-weight: bold; }
-        .fixture-container { background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
+        .fixture-container { background-color: var(--fixture-bg-color); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
         .fixture-header { padding: 15px; cursor: pointer; font-weight: bold; font-size: 18px; display: flex; justify-content: space-between; align-items: center; user-select: none; }
         .fixture-header::after { content: '▲'; transition: transform 0.3s ease; }
         .fixture-container.collapsed .fixture-header::after { transform: rotate(180deg); }
         .data-fetch-section { padding: 15px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 15px; max-height: 500px; transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out; }
         .fixture-container.collapsed .data-fetch-section { max-height: 0; padding-top: 0; padding-bottom: 0; overflow: hidden; }
         .data-fetch-section label { font-weight: bold; }
-        .data-fetch-section select, .data-fetch-section button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; width: 100%; }
+        .data-fetch-section select, .data-fetch-section button { padding: 10px; border-radius: 5px; border: 1px solid var(--input-border-color); font-size: 14px; width: 100%; background-color: var(--card-bg-color); color:var(--text-color); }
         .full-width { width: 100%; grid-column: 1 / -1; }
-        #podcast-status-text { margin-top: 10px; color: #555; font-style: italic; }
+        #podcast-status-text { margin-top: 10px; color: var(--text-color-light); font-style: italic; }
         .control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
-        .control-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between;}
-        .card-title { margin-top: 0; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        button { padding: 8px 15px; border: none; background-color: #3498db; color: white; border-radius: 5px; cursor: pointer; font-weight: 700; transition: background-color 0.2s; }
-        button:hover { background-color: #2980b9; }
-        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
-        button.refresh-btn { background-color: #2ecc71; }
-        button.refresh-btn:hover { background-color: #27ae60; }
-        button.remove-btn, button.logout-btn { background-color: #e74c3c; }
-        button.remove-btn:hover, button.logout-btn:hover { background-color: #c0392b; }
+        .control-card { border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; background-color: var(--card-bg-color); }
+        .card-title { margin-top: 0; font-size: 18px; border-bottom: 1px solid var(--border-color-light); padding-bottom: 10px; margin-bottom: 15px; }
+        button { padding: 8px 15px; border: none; background-color: var(--primary-color); color: white; border-radius: 5px; cursor: pointer; font-weight: 700; transition: background-color 0.2s; }
+        button:hover { background-color: var(--primary-hover-color); }
+        button:disabled { background-color: var(--disabled-color); cursor: not-allowed; }
+        button.refresh-btn { background-color: var(--success-color); }
+        button.refresh-btn:hover { background-color: var(--success-hover-color); }
+        button.remove-btn, button.logout-btn { background-color: var(--danger-color); }
+        button.remove-btn:hover, button.logout-btn:hover { background-color: var(--danger-hover-color); }
         .switch-container { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
         .switch-container span { font-weight: 600; }
         .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--slider-bg-color); transition: .4s; border-radius: 34px; }
         .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #2ecc71; }
+        input:checked + .slider { background-color: var(--success-color); }
         input:checked + .slider:before { transform: translateX(26px); }
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 8px; }
         .dynamic-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-        .dynamic-form input, .dynamic-form select, .dynamic-form textarea { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; font-family: 'Poppins', sans-serif; }
-        .dynamic-list { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #eee; padding-top: 15px; }
-        .dynamic-item { display: flex; justify-content: space-between; align-items: center; background-color: #f9f9f9; padding: 10px; border-radius: 5px; }
+        .dynamic-form input, .dynamic-form select, .dynamic-form textarea { padding: 8px; border-radius: 5px; border: 1px solid var(--input-border-color); font-size: 14px; font-family: 'Poppins', sans-serif; background-color: var(--bg-color); color:var(--text-color); }
+        .dynamic-list { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border-color-light); padding-top: 15px; }
+        .dynamic-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--fixture-bg-color); padding: 10px; border-radius: 5px; }
         .dynamic-text { flex-grow: 1; font-size: 14px; word-break: break-all; }
-        .dynamic-text strong { color: #555; }
+        .dynamic-text strong { color: var(--text-color-light); }
         .dynamic-actions { display: flex; gap: 5px; }
         .dynamic-actions button { padding: 5px 10px; font-size: 12px; }
     </style>
 </head>
 <body>
-
-    <!-- COMMENT: This is the login form. It will be shown by default. -->
     <div id="login-container">
         <h1>Podcast Login</h1>
         <form id="login-form">
@@ -79,13 +122,22 @@
         </form>
     </div>
 
-    <!-- COMMENT: The entire control panel is wrapped in this container and hidden until a user successfully logs in. -->
     <div id="app-container" class="hidden">
         <div class="control-panel-wrapper">
             <header class="panel-header">
                 <h1>Podcast Visuals Control Panel</h1>
-                <!-- COMMENT: Added a logout button to the header. -->
-                <button id="logout-btn" class="logout-btn">Logout</button>
+                <div class="header-controls">
+                    <div class="theme-switch-wrapper">
+                        <span>☀️</span>
+                        <label class="switch">
+                            <input type="checkbox" id="theme-toggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span>🌙</span>
+                    </div>
+                    <a href="scoreboard_control_app.html"><button>Scoreboard App</button></a>
+                    <button id="logout-btn" class="logout-btn">Logout</button>
+                </div>
             </header>
 
             <div class="api-status-bar">
@@ -117,7 +169,6 @@
             </div>
 
             <div class="control-grid">
-                <!-- All of your existing control cards remain here -->
                 <div class="control-card">
                     <h2 class="card-title">Fixtures</h2>
                     <div>
@@ -240,7 +291,60 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // COMMENT: Firebase configuration is placed directly here. This is crucial for initializing Firebase services correctly.
+
+            // COMMENT: Service Worker Registration. This registers the same sw.js file for this app.
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(registration => {
+                            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        })
+                        .catch(err => {
+                            console.log('ServiceWorker registration failed: ', err);
+                        });
+                });
+            }
+
+            // COMMENT: Dark Mode Logic. This is identical to the other app.
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeColorMeta = document.getElementById('theme-color-meta');
+
+            const applyTheme = (theme) => {
+                document.documentElement.setAttribute('data-theme', theme);
+                if (theme === 'dark') {
+                    themeToggle.checked = true;
+                    themeColorMeta.setAttribute('content', '#1e1e1e');
+                } else {
+                    themeToggle.checked = false;
+                    themeColorMeta.setAttribute('content', '#3498db');
+                }
+            };
+
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            } else if (prefersDark) {
+                applyTheme('dark');
+            } else {
+                applyTheme('light');
+            }
+
+            themeToggle.addEventListener('change', () => {
+                const newTheme = themeToggle.checked ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+            
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (!localStorage.getItem('theme')) {
+                    applyTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+
+
+            // All of your existing podcast app logic remains below this line...
             const firebaseConfig = {
                 apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
                 authDomain: "scoreboard-control.firebaseapp.com",
@@ -254,7 +358,6 @@
             const auth = firebase.auth();
             const db = firebase.firestore();
 
-            // COMMENT: These are the DOM elements for handling the login process.
             const loginContainer = document.getElementById('login-container');
             const appContainer = document.getElementById('app-container');
             const loginForm = document.getElementById('login-form');
@@ -263,20 +366,18 @@
             const loginError = document.getElementById('login-error');
             const logoutBtn = document.getElementById('logout-btn');
 
-            // COMMENT: This is the core authentication listener. It shows the login screen or the app based on the user's status.
             auth.onAuthStateChanged(user => {
                 if (user) {
                     loginContainer.classList.add('hidden');
                     appContainer.classList.remove('hidden');
                     loginError.classList.add('hidden');
-                    initializeApp(); // The main app logic is called only after successful login.
+                    initializeApp();
                 } else {
                     loginContainer.classList.remove('hidden');
                     appContainer.classList.add('hidden');
                 }
             });
 
-            // COMMENT: Handles the form submission for logging in.
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 auth.signInWithEmailAndPassword(loginEmail.value, loginPassword.value)
@@ -287,16 +388,11 @@
                     });
             });
             
-            // COMMENT: Handles the logout process.
             logoutBtn.addEventListener('click', () => auth.signOut());
 
-
-            // COMMENT: All of your original podcast control panel logic is now safely inside this function.
             function initializeApp() {
-                // Your existing constants (TEAM_COLORS, etc.)
-                const PODCAST_TEAM_ID = 1615; // D.C. United!
+                const PODCAST_TEAM_ID = 1615;
                 
-                // Firebase Document References
                 const podcastVisibilityDocRef = db.collection('podcast').doc('visibility');
                 const podcastFixtureDocRef = db.collection('podcast').doc('currentFixture');
                 const podcastFixturesDataDocRef = db.collection('podcast').doc('fixturesData');
@@ -311,7 +407,6 @@
 
                 let sessionApiCallCount = 0;
 
-                // Element References
                 const statusText = document.getElementById('podcast-status-text');
                 const yearSelect = document.getElementById('podcast-year-select');
                 const getFixturesBtn = document.getElementById('podcast-get-fixtures-btn');
@@ -332,7 +427,6 @@
                 
                 document.getElementById('podcast-fixture-header').addEventListener('click', () => document.querySelector('.fixture-container').classList.toggle('collapsed'));
 
-                // COMMENT: This function securely calls your Netlify proxy, which then adds the API key.
                 async function fetchApiProxy(apiPath) {
                     const response = await fetch(`/api${apiPath}`);
                     sessionApiCallCount++; 
@@ -411,20 +505,19 @@
 
                 async function refreshGenericData(endpoint, docRef, dataKey, successMessage, errorMessage) {
                     const fixtureId = fixtureSelect.value;
-                    if (endpoint.includes('fixture=') && !fixtureId) {
+                    if (endpoint.includes('fixture=') && (!fixtureId || isNaN(fixtureId))) {
                          statusText.textContent = "Error: Please select a valid fixture first."; statusText.style.color = 'red'; return;
                     }
-                    const url = `/api/${endpoint}`;
-                    statusText.textContent = `Fetching ${successMessage}...`; statusText.style.color = '#555';
+                    let finalEndpoint = endpoint.replace('${fixtureSelect.value}', fixtureId);
+                    
+                    statusText.textContent = `Fetching ${successMessage}...`; statusText.style.color = 'var(--text-color-light)';
                      try {
-                        const data = await fetch(url);
-                        if (!data.ok) throw new Error('Network response was not ok.');
-                        const jsonData = await data.json();
-                        if (!jsonData.response || jsonData.response.length === 0) throw new Error(`No ${errorMessage} found.`);
-                        const payload = endpoint.includes('prediction') ? jsonData.response[0] : jsonData.response;
+                        const data = await fetchApiProxy(`/${finalEndpoint}`);
+                        if (!data.response || data.response.length === 0) throw new Error(`No ${errorMessage} found.`);
+                        const payload = endpoint.includes('predictions?') ? data.response[0] : data.response;
                         await docRef.set({ [dataKey]: payload, lastUpdated: new Date().toISOString() });
-                        statusText.textContent = `${successMessage} refreshed and saved.`; statusText.style.color = 'green';
-                    } catch (err) { console.error(`Error refreshing ${successMessage}:`, err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'red'; }
+                        statusText.textContent = `${successMessage} refreshed and saved.`; statusText.style.color = 'var(--success-color)';
+                    } catch (err) { console.error(`Error refreshing ${successMessage}:`, err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'var(--danger-color)'; }
                 }
                 
                 getFixturesBtn.addEventListener('click', getFixturesForYear);
@@ -435,14 +528,13 @@
                 document.getElementById('podcast-refresh-player-stats-btn').addEventListener('click', () => refreshGenericData(`fixtures/players?fixture=${fixtureSelect.value}`, podcastPlayerStatsDataDocRef, 'stats', 'Player stats', 'player stats'));
                 document.getElementById('podcast-refresh-match-stats-btn').addEventListener('click', () => refreshGenericData(`fixtures/statistics?fixture=${fixtureSelect.value}`, podcastMatchStatsDataDocRef, 'stats', 'Match stats', 'match stats'));
 
-                // Questions Panel Logic
                 addQuestionBtn.addEventListener('click', () => {
                     const text = questionTextInput.value.trim();
                     const name = questionNameInput.value.trim();
                     const source = questionSourceSelect.value;
                     if (!text || !name) {
                         statusText.textContent = "Please enter both a question and a name.";
-                        statusText.style.color = 'red';
+                        statusText.style.color = 'var(--danger-color)';
                         return;
                     }
                     podcastQuestionsCollectionRef.add({ text, name, source, createdAt: new Date() });
@@ -460,14 +552,13 @@
                         item.innerHTML = `<div class="dynamic-text">"${question.text}" — <strong>${question.name}</strong></div><div class="dynamic-actions"><button class="show-question-btn">Show</button><button class="remove-question-btn remove-btn">X</button></div>`;
                         item.querySelector('.show-question-btn').addEventListener('click', () => {
                             podcastCurrentQuestionDocRef.set({ ...question, show: true });
-                            statusText.textContent = `Set question from ${question.name} to be shown.`; statusText.style.color = 'green';
+                            statusText.textContent = `Set question from ${question.name} to be shown.`; statusText.style.color = 'var(--success-color)';
                         });
                         item.querySelector('.remove-question-btn').addEventListener('click', () => doc.ref.delete());
                         questionsListContainer.appendChild(item);
                     });
                 });
 
-                // Headlines Panel Logic
                 addHeadlineBtn.addEventListener('click', () => {
                     const title = headlineTitleInput.value.trim();
                     const description = headlineDescInput.value.trim();
@@ -475,7 +566,7 @@
 
                     if (!title || !description || !imageFile) {
                         statusText.textContent = "Please fill in all headline fields.";
-                        statusText.style.color = 'red';
+                        statusText.style.color = 'var(--danger-color)';
                         return;
                     }
 
@@ -502,7 +593,7 @@
                         
                         item.querySelector('.show-headline-btn').addEventListener('click', () => {
                             podcastCurrentHeadlineDocRef.set({ ...headline, show: true });
-                            statusText.textContent = `Set headline "${headline.title}" to be shown.`; statusText.style.color = 'green';
+                            statusText.textContent = `Set headline "${headline.title}" to be shown.`; statusText.style.color = 'var(--success-color)';
                         });
 
                         item.querySelector('.remove-headline-btn').addEventListener('click', () => doc.ref.delete());
@@ -510,7 +601,6 @@
                     });
                 });
 
-                // Switch Logic
                 const addSwitchListener = (elementId, firestoreField, currentDocRef) => {
                     const toggle = document.getElementById(elementId);
                     if (toggle) {
@@ -518,7 +608,7 @@
                             const isVisible = e.target.checked;
                             podcastVisibilityDocRef.update({ [firestoreField]: isVisible });
                             if (currentDocRef) {
-                                currentDocRef.update({ show: isVisible }).catch(() => currentDocRef.set({ show: isVisible }));
+                                currentDocRef.update({ show: isVisible }).catch(() => currentDocRef.set({ show: isvisible }));
                             }
                         });
                     }
@@ -557,7 +647,6 @@
                     }
                 });
                 
-                // Initial data fetch
                 getFixturesForYear();
                 fetchApiStatus();
                 setInterval(fetchApiStatus, 300000); 
