@@ -27,8 +27,13 @@
             const leagueEventsDocRef = db.collection('scoreboard').doc('leagueEvents');
             const leagueEventsDataDocRef = db.collection('scoreboard').doc('leagueEventsData');
             
-            let displayedEventIds = new Set();
+            let previouslyDisplayedIds = new Set();
             const MAX_EVENTS = 5; // Max events to show at once
+
+            // --- NEW: A persistent array to store all events seen in this session ---
+            // This is the key to our new sorting logic. It will hold event objects
+            // plus our custom 'receivedAt' timestamp.
+            let allSeenEvents = [];
 
             leagueEventsDocRef.onSnapshot((doc) => {
                 if (doc.exists && doc.data().show) {
@@ -44,7 +49,8 @@
                     }
                 } else {
                     wrapper.innerHTML = '';
-                    displayedEventIds.clear();
+                    previouslyDisplayedIds.clear();
+                    allSeenEvents = []; // Clear our master list when the ticker is hidden
                 }
             });
 
@@ -73,41 +79,49 @@
                 return 'ℹ️';
             }
 
-            // --- MODIFICATION START ---
-            function updateTicker(events) {
+            // --- MODIFICATION START: The entire ticker logic is updated ---
+            function updateTicker(eventsFromDb) {
                 const eventsList = document.getElementById('events-list');
-                if (!events || !eventsList) return;
+                if (!eventsFromDb || !eventsList) return;
 
-                // REASON: Same as the match events ticker, this new logic rebuilds the list
-                // on each update to ensure it's always perfectly sorted by time.
+                // 1. Identify new events by checking against our master list.
+                const seenEventIds = new Set(allSeenEvents.map(e => e.id));
+                eventsFromDb.forEach(event => {
+                    const eventId = `${event.fixtureInfo.fixture.id}-${event.type}-${event.player.id}-${event.time.elapsed}-${event.detail}`;
+                    if (!seenEventIds.has(eventId)) {
+                        // 2. If an event is new, add it to our master list with a timestamp.
+                        allSeenEvents.push({
+                            ...event,
+                            id: eventId, // Store the unique ID
+                            receivedAt: Date.now() // Add our custom timestamp
+                        });
+                    }
+                });
 
-                // 1. Filter and sort all events descending by time (newest first).
-                const sortedEvents = events
-                    .filter(event => event.player && event.player.name && event.team && event.team.name && event.fixtureInfo)
-                    .sort((a, b) => {
-                        if (b.time.elapsed !== a.time.elapsed) {
-                            return b.time.elapsed - a.time.elapsed;
-                        }
-                        const extraA = a.time.extra || 0;
-                        const extraB = b.time.extra || 0;
-                        return extraB - extraA;
-                    });
+                // 3. Sort the master list by our custom timestamp, newest first.
+                // If the master list is empty (e.g., on first load after a refresh),
+                // fall back to sorting by in-game minute to show something sensible.
+                const sortedEvents = allSeenEvents.length > 0
+                    ? allSeenEvents.sort((a, b) => b.receivedAt - a.receivedAt)
+                    : eventsFromDb.sort((a,b) => b.time.elapsed - a.time.elapsed);
 
-                // 2. Take the most recent events up to our limit.
+
+                // 4. Take the most recent events up to our display limit.
                 const eventsToShow = sortedEvents.slice(0, MAX_EVENTS);
-                const newEventIds = new Set();
+                const newDisplayIds = new Set();
                 
-                // 3. Clear the current list.
+                // 5. Clear the current on-screen list.
                 eventsList.innerHTML = '';
 
-                // 4. Rebuild the list with the correctly sorted events.
+                // 6. Rebuild the on-screen list with the correctly sorted events.
                 eventsToShow.forEach(event => {
-                    const eventId = `${event.fixtureInfo.fixture.id}-${event.type}-${event.player.id}-${event.time.elapsed}-${event.detail}`;
-                    newEventIds.add(eventId);
+                    // Use the pre-generated ID if it exists, otherwise create it (for the fallback case)
+                    const eventId = event.id || `${event.fixtureInfo.fixture.id}-${event.type}-${event.player.id}-${event.time.elapsed}-${event.detail}`;
+                    newDisplayIds.add(eventId);
 
                     const item = document.createElement('div');
                     
-                    const isNew = !displayedEventIds.has(eventId);
+                    const isNew = !previouslyDisplayedIds.has(eventId);
                     item.className = isNew ? 'event-item new-event' : 'event-item';
 
                     const eventTime = event.time.extra ? `${event.time.elapsed}+${event.time.extra}` : event.time.elapsed;
@@ -124,7 +138,7 @@
                     
                     const detailElement = item.querySelector('.event-details');
 
-                    // 5. Apply animations only to new events.
+                    // 7. Apply animations only to events that weren't on screen in the last update.
                     if (isNew) {
                         typewriterEffect(detailElement, detailText);
                         setTimeout(() => item.classList.remove('new-event'), 500);
@@ -133,8 +147,8 @@
                     }
                 });
 
-                // 6. Update the master set of displayed IDs for the next cycle.
-                displayedEventIds = newEventIds;
+                // 8. Update the set of previously displayed IDs for the next cycle.
+                previouslyDisplayedIds = newDisplayIds;
 
                 if (eventsList.children.length === 0) {
                     eventsList.innerHTML = `<div class="no-events">No recent events.</div>`;
