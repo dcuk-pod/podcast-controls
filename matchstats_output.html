@@ -24,8 +24,79 @@
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
             
-            // COMMENT: Define the base URL for your GitHub Pages assets.
             const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
+
+            // --- NEW: Integrated your full team color lists ---
+            const TEAM_COLORS = {
+              1595: 'rgb(85, 150, 71)',     // Seattle Sounders FC (Green)
+              1596: 'rgb(0, 102, 175)',     // San Jose Earthquakes (Blue)
+              1597: 'rgb(222, 53, 56)',     // FC Dallas (Red)
+              1598: 'rgb(101, 44, 144)',    // Orlando City SC (Purple)
+              1599: 'rgb(181, 152, 90)',    // Philadelphia Union (Gold)
+              1600: 'rgb(245, 128, 44)',    // Houston Dynamo FC (Orange)
+              1601: 'rgb(222, 53, 56)',     // Toronto FC (Red)
+              1602: 'rgb(217, 39, 46)',     // New York Red Bulls (Red)
+              1603: 'rgb(15, 49, 92)',      // Vancouver Whitecaps FC (Dark Blue)
+              1604: 'rgb(108, 169, 223)',   // New York City FC (Sky Blue)
+              1605: 'rgb(0, 40, 85)',       // LA Galaxy (Dark Blue)
+              1606: 'rgb(205, 34, 53)',     // Real Salt Lake (Red)
+              1607: 'rgb(229, 26, 55)',     // Chicago Fire FC (Red)
+              1608: 'rgb(141, 22, 44)',     // Atlanta United FC (Dark Red)
+              1609: '#021D3D',     // New England Revolution (Dark Blue)
+              1610: 'rgb(149, 29, 64)',     // Colorado Rapids (Burgundy)
+              1611: 'rgb(80, 132, 185)',    // Sporting Kansas City (Light Blue)
+              1612: 'rgb(143, 201, 232)',   // Minnesota United FC (Sky Blue)
+              1613: 'rgb(254, 222, 0)',     // Columbus Crew (Yellow)
+              1614: 'rgb(0, 85, 155)',      // CF Montréal (Blue)
+              1615: 'rgb(239, 62, 65)',      // D.C. United (Red)
+              1616: 'rgb(193, 162, 92)',     // Los Angeles FC (Gold)
+              1617: 'rgb(0, 70, 41)',        // Portland Timbers (Green)
+              2242: 'rgb(241, 91, 36)',      // FC Cincinnati (Orange)
+              9568: 'rgb(252, 185, 205)',    // Inter Miami CF (Pink)
+              9569: 'rgb(254, 219, 0)',      // Nashville SC (Yellow)
+              16489: 'rgb(0, 182, 75)',      // Austin FC (Bright Green)
+              18310: 'rgb(91, 192, 240)',    // Charlotte FC (Blue)
+              20787: 'rgb(217, 2, 79)',      // St. Louis City SC (Magenta)
+              25484: 'rgb(11, 46, 75)',      // San Diego FC (Dark Blue)
+              70: '#E32124',   // Middlesbrough (Red)
+              76: '#FFFFFF',   // Swansea City (White)
+              'default': 'rgba(66, 65, 65, 1)' 
+            };
+            const TEAM_COLORS_ALT = {
+              1595: '#003C71',     // Seattle Sounders FC (Sounder Blue)
+              1596: '#000000',     // San Jose Earthquakes (Black)
+              1597: '#003E7B',     // FC Dallas (Brazos Blue)
+              1598: '#FFD100',     // Orlando City SC (Gold)
+              1599: '#0A2240',     // Philadelphia Union (Union Blue)
+              1600: '#000000',     // Houston Dynamo FC (Black)
+              1601: '#231F20',     // Toronto FC (Onyx/Dark Grey)
+              1602: '#FFC700',     // New York Red Bulls (Yellow)
+              1603: '#92C1E9',     // Vancouver Whitecaps FC (Whitecaps Blue)
+              1604: '#002654',     // New York City FC (Midnight Blue)
+              1605: '#FFD200',     // LA Galaxy (Galaxy Gold)
+              1606: '#013A81',     // Real Salt Lake (Cobalt Blue)
+              1607: '#001E61',     // Chicago Fire FC (Navy Blue)
+              1608: '#A48A5A',     // Atlanta United FC (Dark Gold)
+              1609: '#E51938',     // New England Revolution (Revolution Red)
+              1610: '#569FD3',     // Colorado Rapids (Sky Blue)
+              1611: '#002F65',     // Sporting Kansas City (Dark Indigo)
+              1612: '#58595B',     // Minnesota United FC (Iron Grey)
+              1613: '#000000',     // Columbus Crew (Black)
+              1614: '#000000',     // CF Montréal (Black)
+              1615: '#000000',     // D.C. United (Black)
+              1616: '#000000',     // Los Angeles FC (Black)
+              1617: '#E1A023',     // Portland Timbers (Timbers Gold)
+              2242: '#003067',     // FC Cincinnati (FCC Blue)
+              9568: '#000000',     // Inter Miami CF (Black)
+              9569: '#001F5B',     // Nashville SC (Acoustic Blue)
+              16489: '#000000',    // Austin FC (Black)
+              18310: '#000000',    // Charlotte FC (Black)
+              20787: '#001D4C',    // St. Louis City SC (River Blue)
+              25484: '#F5831F',    // San Diego FC (Horizon Orange)
+              70: '#FFFFFF',   // Middlesbrough (White)
+              76: '#000000',   // Swansea City (Black)
+              'default': 'rgb(255, 255, 255)'
+            };
 
             const statsContainer = document.getElementById('stats-container');
             const matchStatsDocRef = db.collection('scoreboard').doc('matchStats');
@@ -35,6 +106,14 @@
             let showStats = false;
             let currentFixtureDetail = null;
             let currentStatsData = null;
+            
+            // --- UPDATED HELPER FUNCTION ---
+            // REASON: This now returns an object with both primary and alternate colors for more dynamic styling.
+            function getTeamColors(teamId) {
+                const primary = TEAM_COLORS[teamId] || TEAM_COLORS['default'];
+                const alternate = TEAM_COLORS_ALT[teamId] || TEAM_COLORS_ALT['default'];
+                return { primary, alternate };
+            }
 
             function renderGraphic() {
                 if (showStats && currentFixtureDetail && currentStatsData) {
@@ -74,10 +153,13 @@
                      return;
                 }
                 
-                // COMMENT: Updated background logo paths.
                 const homeLogoUrl = `${assetsBaseUrl}assets/logos/${fixture.teams.home.id}.png`;
                 const awayLogoUrl = `${assetsBaseUrl}assets/logos/${fixture.teams.away.id}.png`;
                 const leagueLogoUrl = `${assetsBaseUrl}assets/leagues/${fixture.league.id}.png`;
+
+                // --- MODIFICATION: Get the full color object for each team ---
+                const homeColors = getTeamColors(fixture.teams.home.id);
+                const awayColors = getTeamColors(fixture.teams.away.id);
 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'stats-wrapper';
@@ -89,14 +171,17 @@
                 const fixtureDate = new Date(fixture.fixture.date);
                 const formattedDate = fixtureDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
+                // --- MODIFICATION: Apply colors to the team name spans ---
+                // NOTE: You may need to add padding to the '.team-name' class in your CSS for this to look best.
+                // e.g., .team-name { padding: 5px 10px; border-radius: 5px; }
                 content.innerHTML += `
                     <div class="top-bar">
                         <img src="${leagueLogoUrl}" alt="${fixture.league.name}" class="league-logo" onerror="this.src='${fixture.league.logo}'">
                         <div class="fixture-details">
                             <div class="fixture-name">
-                                <span class="team-name home">${fixture.teams.home.name}</span>
+                                <span class="team-name home" style="background-color: ${homeColors.primary}; color: ${homeColors.alternate};">${fixture.teams.home.name}</span>
                                 <span class="scoreline">${fixture.goals.home} - ${fixture.goals.away}</span>
-                                <span class="team-name away">${fixture.teams.away.name}</span>
+                                <span class="team-name away" style="background-color: ${awayColors.primary}; color: ${awayColors.alternate};">${fixture.teams.away.name}</span>
                             </div>
                             <div class="fixture-meta">
                                 ${formattedDate} | ${fixture.fixture.venue.name}
@@ -128,17 +213,18 @@
                     const homeWidth = total > 0 ? (homeValue / total) * 100 : 50;
                     const awayWidth = total > 0 ? (awayValue / total) * 100 : 50;
 
+                    // --- MODIFICATION: Use both primary (bar) and alternate (text) colors in the style attributes ---
                     statsArea.innerHTML += `
                         <div class="stat-row">
-                            <div class="stat-value home">${homeStat.value || 0}</div>
+                            <div class="stat-value home" style="color: ${homeColors.alternate}; background-color: ${homeColors.primary};">${homeStat.value || 0}</div>
                             <div class="stat-bar-container home">
-                                <div class="stat-bar" style="width: ${homeWidth}%; background-color: ${fixture.teams.home.color};"></div>
+                                <div class="stat-bar" style="width: ${homeWidth}%; background-color: ${homeColors.primary};"></div>
                             </div>
                             <div class="stat-label">${statName === 'Ball Possession' ? 'Possession' : statName === 'Offsides' ? 'Offside' : statName === 'Passes %' ? 'Passing Acc.' :  statName === 'expected_goals' ? 'Expected Goals' : statName}</div>
                             <div class="stat-bar-container away">
-                                <div class="stat-bar" style="width: ${awayWidth}%; background-color: ${fixture.teams.away.color};"></div>
+                                <div class="stat-bar" style="width: ${awayWidth}%; background-color: ${awayColors.primary};"></div>
                             </div>
-                            <div class="stat-value away">${awayStat.value || 0}</div>
+                            <div class="stat-value away" style="color: ${awayColors.alternate}; background-color: ${awayColors.primary};">${awayStat.value || 0}</div>
                         </div>
                     `;
                 });
