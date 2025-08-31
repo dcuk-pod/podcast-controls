@@ -127,7 +127,7 @@
                     
                     let detailText = '';
                     if (event.type === 'subst') {
-                        detailText = `${event.player.name} ▲ | ${event.assist.name} ▼`;
+                        detailText = `${event.assist.name} ▲ | ${event.player.name} ▼`;
                     } else {
                         detailText = `${event.player.name} (${event.detail || ''})`;
                     }
