@@ -29,122 +29,244 @@
 
     <script>
         window.addEventListener('load', function() {
-            // All of your existing JavaScript for this page remains unchanged
-            const container=document.getElementById("preview-container"),visibilityDocRef=db.collection("podcast").doc("visibility"),dataDocRef=db.collection("podcast").doc("predictionData"),fixtureDocRef=db.collection("podcast").doc("currentFixture");let unsubscribeAll=null;function subscribeToData(){if(unsubscribeAll)unsubscribeAll();let e=null,t=null;const n=dataDocRef.onSnapshot(n=>{n.exists&&n.data().prediction?(e=n.data().prediction,checkAndRender()):displayError("Prediction data not found. Please click 'Load Data' in the control panel.")}),i=fixtureDocRef.onSnapshot(n=>{n.exists?(t=n.data(),checkAndRender()):displayError("Fixture data not found. Please load a fixture from the control panel.")});unsubscribeAll=()=>{n(),i()};async function checkAndRender(){if(e&&t)try{const n=e.league.id,i=e.league.season,a=await fetch(`${API_BASE_URL}/standings?league=${n}&season=${i}`,{headers:{"x-rapidapi-key":apiKey,"x-rapidapi-host":"v3.football.api-sports.io"}}),d=await a.json();if(!d.response||0===d.response.length)return void buildGraphic(t,e,[]);const o=d.response[0].league.standings.flat();buildGraphic(t,e,o)}catch(e){console.error("PREDICTION RENDER ERROR:",e),displayError(e.message)}}}function hideGraphic(){const e=container.querySelector(".preview-wrapper");e?(e.classList.remove("visible"),setTimeout(()=>{e.classList.contains("visible")||(container.innerHTML="")},500)):container.innerHTML=""}function displayError(e){container.innerHTML=`<div class="preview-wrapper visible"><h1>Error</h1><p style="font-size: 24px;">${e}</p></div>`}function buildGraphic(e,t,n){container.innerHTML="";const i=document.createElement("div");i.className="preview-wrapper";const a=t.teams.home,d=t.teams.away,o=new Date(e.fixture.date),s=o.toLocaleDateString("en-GB",{day:"numeric",month:"long"}),r=o.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZoneName:"short"}),l=e=>(e||"-----").slice(-6).split("").map(e=>`<div class="form-box form-${e}">${e}</div>`).join(""),c=`
-            <div class="top-bar">
-                <img src="${t.league.logo}" alt="${t.league.name}" class="league-logo">
-                <div class="header-details">
-                    <div class="fixture-name">${t.teams.home.name} vs ${t.teams.away.name}</div>
-                    <div class="fixture-meta">${s} at ${r} | ${e.fixture.venue.name} | Referee: ${e.fixture.referee||"Not Announced"}</div>
-                </div>
-            </div>
-        `,m=`
-            <div class="section prediction-summary">
-                <div class="details">
-                    <div class="prediction-item">
-                        <div class="label">Predicted Winner</div>
-                        <div class="value">${t.predictions.winner.name||"Draw"}</div>
-                    </div>
-                    <div class="prediction-item">
-                        <div class="label">Predicted Score</div>
-                        <div class="value">${(t.predictions.goals.home||"-").replace("-","")} - ${(t.predictions.goals.away||"-").replace("-","")}</div>
-                    </div>
-                    <div class="prediction-item prediction-chances">
-                        <div class="chance-item">
-                            <div class="label">${a.name}</div>
-                            <div class="value">${t.predictions.percent.home}</div>
+            const container = document.getElementById('preview-container');
+            const visibilityDocRef = db.collection('podcast').doc('visibility');
+            const dataDocRef = db.collection('podcast').doc('predictionData');
+            const fixtureDocRef = db.collection('podcast').doc('currentFixture');
+            
+            let unsubscribeAll = null;
+
+            visibilityDocRef.onSnapshot(doc => {
+                const isVisible = doc.data()?.showPrediction === true;
+                if (isVisible) {
+                    container.innerHTML = `<h1><br/>Loading Match Preview...</h1>`;
+                    subscribeToData();
+                } else {
+                    if (unsubscribeAll) {
+                        unsubscribeAll();
+                        unsubscribeAll = null;
+                    }
+                    hideGraphic();
+                }
+            });
+
+            function subscribeToData() {
+                if (unsubscribeAll) unsubscribeAll();
+
+                let predictionData = null;
+                let fixtureData = null;
+
+                const unsubPrediction = dataDocRef.onSnapshot(doc => {
+                    if (doc.exists && doc.data().prediction) {
+                        predictionData = doc.data().prediction;
+                        checkAndRender();
+                    }
+                });
+
+                const unsubFixture = fixtureDocRef.onSnapshot(doc => {
+                    if (doc.exists) {
+                        fixtureData = doc.data();
+                        checkAndRender();
+                    }
+                });
+                
+                unsubscribeAll = () => {
+                    unsubPrediction();
+                    unsubFixture();
+                };
+
+                async function checkAndRender() {
+                    if (predictionData && fixtureData) {
+                        try {
+                            const leagueId = predictionData.league.id;
+                            const season = predictionData.league.season;
+
+                            // COMMENT: This now uses the Netlify proxy, just like the control panel.
+                            // The '/api/' path is automatically redirected by Netlify.
+                            const standingsRes = await fetch(`/api/standings?league=${leagueId}&season=${season}`);
+                            const standingsData = await standingsRes.json();
+                            
+                            if (!standingsData.response || standingsData.response.length === 0) {
+                               buildGraphic(fixtureData, predictionData, []);
+                               return;
+                            }
+                            const standings = standingsData.response[0].league.standings.flat();
+                            
+                            buildGraphic(fixtureData, predictionData, standings);
+
+                        } catch (err) {
+                            console.error("PREDICTION RENDER ERROR:", err);
+                            displayError(err.message);
+                        }
+                    }
+                }
+            }
+
+            function hideGraphic() {
+                const wrapper = container.querySelector('.preview-wrapper');
+                if (wrapper) {
+                    wrapper.classList.remove('visible');
+                    setTimeout(() => { if (!wrapper.classList.contains('visible')) container.innerHTML = ''; }, 500);
+                } else {
+                    container.innerHTML = '';
+                }
+            }
+
+            function displayError(message) {
+                container.innerHTML = `<div class="preview-wrapper visible"><h1>Error</h1><p style="font-size: 24px;">${message}</p></div>`;
+            }
+
+            function buildGraphic(fixture, prediction, standings) {
+                container.innerHTML = '';
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'preview-wrapper';
+
+                const homeTeam = prediction.teams.home;
+                const awayTeam = prediction.teams.away;
+                const fixtureDate = new Date(fixture.fixture.date);
+                const formattedDate = fixtureDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+                const formattedTime = fixtureDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+                const createFormHtml = (formString) => (formString || '-----').slice(-6).split('').map(r => `<div class="form-box form-${r}">${r}</div>`).join('');
+
+                const topBarHTML = `
+                    <div class="top-bar">
+                        <img src="${prediction.league.logo}" alt="${prediction.league.name}" class="league-logo">
+                        <div class="header-details">
+                            <div class="fixture-name">${prediction.teams.home.name} vs ${prediction.teams.away.name}</div>
+                            <div class="fixture-meta">${formattedDate} at ${formattedTime} | ${fixture.fixture.venue.name} | Referee: ${fixture.fixture.referee || 'Not Announced'}</div>
                         </div>
-                        <div class="chance-item">
-                            <div class="label">Draw</div>
-                            <div class="value">${t.predictions.percent.draw}</div>
+                    </div>
+                `;
+
+                const predictionSummaryHTML = `
+                    <div class="section prediction-summary">
+                        <div class="details">
+                            <div class="prediction-item">
+                                <div class="label">Predicted Winner</div>
+                                <div class="value">${prediction.predictions.winner.name || 'Draw'}</div>
+                            </div>
+                            <div class="prediction-item">
+                                <div class="label">Predicted Score</div>
+                                <div class="value">${(prediction.predictions.goals.home || '-').replace('-', '')} - ${(prediction.predictions.goals.away || '-').replace('-', '')}</div>
+                            </div>
+                            <div class="prediction-item prediction-chances">
+                                <div class="chance-item">
+                                    <div class="label">${homeTeam.name}</div>
+                                    <div class="value">${prediction.predictions.percent.home}</div>
+                                </div>
+                                <div class="chance-item">
+                                    <div class="label">Draw</div>
+                                    <div class="value">${prediction.predictions.percent.draw}</div>
+                                </div>
+                                <div class="chance-item">
+                                    <div class="label">${awayTeam.name}</div>
+                                    <div class="value">${prediction.predictions.percent.away}</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="chance-item">
-                            <div class="label">${d.name}</div>
-                            <div class="value">${t.predictions.percent.away}</div>
+                    </div>
+                `;
+                
+                const createTeamStatsHTML = (team, type) => {
+                    const league = team.league;
+                    if (!league) return '';
+                    const mostUsedFormation = league.lineups?.sort((a, b) => b.played - a.played)[0]?.formation || 'N/A';
+                    return `
+                        <div class="section team-stats">
+                            <div class="team-header">
+                                <img src="${team.logo}" alt="${team.name}">
+                                <h2 class="team-name">${team.name}</h2>
+                            </div>
+                            <div class="stat-row"><span class="label">Record (W-D-L)</span> <span class="value">${league.fixtures.wins.total}-${league.fixtures.draws.total}-${league.fixtures.loses.total}</span></div>
+                            <div class="stat-row"><span class="label">Goals For / Against</span> <span class="value">${league.goals.for.total.total} / ${league.goals.against.total.total}</span></div>
+                            <div class="stat-row"><span class="label">Avg Goals For</span> <span class="value">${league.goals.for.average.total}</span></div>
+                            <div class="stat-row"><span class="label">Avg Goals Against</span> <span class="value">${league.goals.against.average.total}</span></div>
+                            <div class="stat-row"><span class="label">Clean Sheets</span> <span class="value">${league.clean_sheet.total}</span></div>
+                            <div class="stat-row"><span class="label">Failed to Score</span> <span class="value">${league.failed_to_score.total}</span></div>
+                            <div class="stat-row"><span class="label">Biggest Win</span> <span class="value">${league.biggest.wins[type] || '-'}</span></div>
+                            <div class="stat-row"><span class="label">Main Formation</span> <span class="value">${mostUsedFormation}</span></div>
+                        </div>
+                    `;
+                };
+
+                const h2hHTML = `
+                    <div class="section h2h">
+                        <h3 class="section-title">Head to Head (Last 5)</h3>
+                        <div class="h2h-list">
+                            ${prediction.h2h.slice(0, 5).map(match => `
+                                <div class="match">
+                                    <span class="team-name home ${match.teams.home.winner ? 'winner' : ''}">${match.teams.home.name}</span>
+                                    <span class="score">${match.goals.home} - ${match.goals.away}</span>
+                                    <span class="team-name away ${match.teams.away.winner ? 'winner' : ''}">${match.teams.away.name}</span>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
-                </div>
-            </div>
-        `,p=(e,t)=>{const n=e.league;if(!n)return"";const i=n.lineups?.sort((e,t)=>t.played-e.played)[0]?.formation||"N/A";return`
-                <div class="section team-stats">
-                    <div class="team-header">
-                        <img src="${e.logo}" alt="${e.name}">
-                        <h2 class="team-name">${e.name}</h2>
-                    </div>
-                    <div class="stat-row"><span class="label">Record (W-D-L)</span> <span class="value">${n.fixtures.wins.total}-${n.fixtures.draws.total}-${n.fixtures.loses.total}</span></div>
-                    <div class="stat-row"><span class="label">Goals For / Against</span> <span class="value">${n.goals.for.total.total} / ${n.goals.against.total.total}</span></div>
-                    <div class="stat-row"><span class="label">Avg Goals For</span> <span class="value">${n.goals.for.average.total}</span></div>
-                    <div class="stat-row"><span class="label">Avg Goals Against</span> <span class="value">${n.goals.against.average.total}</span></div>
-                    <div class="stat-row"><span class="label">Clean Sheets</span> <span class="value">${n.clean_sheet.total}</span></div>
-                    <div class="stat-row"><span class="label">Failed to Score</span> <span class="value">${n.failed_to_score.total}</span></div>
-                    <div class="stat-row"><span class="label">Biggest Win</span> <span class="value">${n.biggest.wins[t]||"-"}</span></div>
-                    <div class="stat-row"><span class="label">Main Formation</span> <span class="value">${i}</span></div>
-                </div>
-            `},f=`
-            <div class="section h2h">
-                <h3 class="section-title">Head to Head (Last 5)</h3>
-                <div class="h2h-list">
-                    ${t.h2h.slice(0,5).map(e=>`
-                        <div class="match">
-                            <span class="team-name home ${e.teams.home.winner?"winner":""}">${e.teams.home.name}</span>
-                            <span class="score">${e.goals.home} - ${e.goals.away}</span>
-                            <span class="team-name away ${e.teams.away.winner?"winner":""}">${e.teams.away.name}</span>
+                `;
+
+                const formHTML = `
+                    <div class="section form">
+                        <h3 class="section-title">Recent Form (Last 6)</h3>
+                        <div class="form-container">
+                            <div class="form-team">
+                                <div class="form-title">${homeTeam.name}</div>
+                                <div class="form-boxes">${createFormHtml(homeTeam.league.form)}</div>
+                            </div>
+                            <div class="form-team">
+                                <div class="form-title">${awayTeam.name}</div>
+                                <div class="form-boxes">${createFormHtml(awayTeam.league.form)}</div>
+                            </div>
                         </div>
-                    `).join("")}
-                </div>
-            </div>
-        `,g=`
-            <div class="section form">
-                <h3 class="section-title">Recent Form (Last 6)</h3>
-                <div class="form-container">
-                    <div class="form-team">
-                        <div class="form-title">${a.name}</div>
-                        <div class="form-boxes">${l(a.league.form)}</div>
                     </div>
-                    <div class="form-team">
-                        <div class="form-title">${d.name}</div>
-                        <div class="form-boxes">${l(d.league.form)}</div>
+                `;
+
+                const standingsHTML = standings && standings.length > 0 ? `
+                    <div class="section standings">
+                        <h3 class="section-title">League Standings</h3>
+                        <table class="standings-table">
+                            <thead>
+                                <tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>
+                            </thead>
+                            <tbody>
+                                ${standings
+                                    .filter(row => row.team.id === homeTeam.id || row.team.id === awayTeam.id)
+                                    .map(row => `
+                                        <tr class="highlight-team">
+                                            <td>${row.rank}</td>
+                                            <td class="team-cell"><img src="${row.team.logo}" alt="${row.team.name}"><span>${row.team.name}</span></td>
+                                            <td>${row.all.played}</td>
+                                            <td>${row.all.win}</td>
+                                            <td>${row.all.draw}</td>
+                                            <td>${row.all.lose}</td>
+                                            <td>${row.goalsDiff}</td>
+                                            <td><b>${row.points}</b></td>
+                                        </tr>
+                                    `).join('')}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-            </div>
-        `,h=n&&n.length>0?`
-            <div class="section standings">
-                <h3 class="section-title">League Standings</h3>
-                <table class="standings-table">
-                    <thead>
-                        <tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>
-                    </thead>
-                    <tbody>
-                        ${n.filter(e=>e.team.id===a.id||e.team.id===d.id).map(e=>`
-                                <tr class="highlight-team">
-                                    <td>${e.rank}</td>
-                                    <td class="team-cell"><img src="${e.team.logo}" alt="${e.team.name}"><span>${e.team.name}</span></td>
-                                    <td>${e.all.played}</td>
-                                    <td>${e.all.win}</td>
-                                    <td>${e.all.draw}</td>
-                                    <td>${e.all.lose}</td>
-                                    <td>${e.goalsDiff}</td>
-                                    <td><b>${e.points}</b></td>
-                                </tr>
-                            `).join("")}
-                    </tbody>
-                </table>
-            </div>
-        `:"";i.innerHTML=`
-            ${c}
-            <div class="main-content">
-                <div class="column left-column">
-                    ${m}
-                    ${p(a,"home")}
-                    ${p(d,"away")}
-                </div>
-                <div class="column right-column">
-                    ${f}
-                    ${g}
-                    ${h}
-                </div>
-            </div>
-        `,container.appendChild(i),setTimeout(()=>i.classList.add("visible"),50)}visibilityDocRef.onSnapshot(e=>{const t=e.data()?.showPrediction===!0;t?(container.innerHTML="<h1><br/>Loading Match Preview...</h1>",subscribeToData()):(unsubscribeAll&&(unsubscribeAll(),unsubscribeAll=null),hideGraphic())});
+                ` : '';
+
+                wrapper.innerHTML = `
+                    ${topBarHTML}
+                    <div class="main-content">
+                        <div class="column left-column">
+                            ${predictionSummaryHTML}
+                            ${createTeamStatsHTML(homeTeam, 'home')}
+                            ${createTeamStatsHTML(awayTeam, 'away')}
+                        </div>
+                        <div class="column right-column">
+                            ${h2hHTML}
+                            ${formHTML}
+                            ${standingsHTML}
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(wrapper);
+                setTimeout(() => wrapper.classList.add('visible'), 50);
+            }
         });
     </script>
 </body>
