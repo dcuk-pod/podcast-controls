@@ -6,6 +6,43 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
     <link rel="stylesheet" href="ticker_style.css">
+
+    <style>
+        .event-line {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Adjust the space between columns */
+            width: 100%;
+        }
+        .col-time {
+            flex-basis: 50px; /* Fixed width for time */
+            flex-shrink: 0;
+        }
+        .col-event {
+            flex-basis: 160px; /* Fixed width for event type */
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Space between icon and text */
+        }
+        .col-fixture {
+            flex-grow: 1; /* Allows this to take up all remaining space */
+            text-align: center;
+            /* Prevents long team names from breaking the layout */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .col-player {
+            flex-basis: 200px; /* Fixed width for player name */
+            flex-shrink: 0;
+            text-align: right;
+            /* Prevents long player names from breaking the layout */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
 </head>
 <body>
     <div id="ticker-container-wrapper">
@@ -62,30 +99,24 @@
                 return 'ℹ️';
             }
             
-            // --- NEW: Helper function to get the uppercase text for an event ---
             function getEventText(event) {
                 if (event.type === 'Goal') return 'GOAL';
                 if (event.type === 'Card') {
-                    // This will return "YELLOW CARD" or "RED CARD"
                     return event.detail.toUpperCase();
                 }
-                // Fallback for any other event types
                 return event.type.toUpperCase();
             }
 
-            // --- MODIFICATION START: The ticker logic is updated for the new format ---
             function updateTicker(eventsFromDb) {
                 const eventsList = document.getElementById('events-list');
                 if (!eventsFromDb || !eventsList) return;
 
-                // 1. Filter the incoming data first to remove unwanted events.
                 const filteredEvents = eventsFromDb.filter(event => {
                     const hasPlayerName = event.player && event.player.name != null;
                     const isNotSub = event.type !== 'subst';
                     return hasPlayerName && isNotSub;
                 });
 
-                // 2. Identify new events and add them to our master list with a timestamp.
                 const seenEventIds = new Set(allSeenEvents.map(e => e.id));
                 filteredEvents.forEach(event => {
                     const eventId = `${event.fixtureInfo.fixture.id}-${event.type}-${event.player.id}-${event.time.elapsed}-${event.detail}`;
@@ -94,25 +125,21 @@
                     }
                 });
 
-                // 3. Sort the master list by our custom timestamp (newest first).
                 const sortedEvents = allSeenEvents.sort((a, b) => b.receivedAt - a.receivedAt);
-
-                // 4. Take the most recent events to display.
                 const eventsToShow = sortedEvents.slice(0, MAX_EVENTS);
                 const newDisplayIds = new Set();
                 
                 eventsList.innerHTML = '';
 
-                // 5. Rebuild the on-screen list with the new, detailed format.
+                // --- MODIFICATION START: The rendering loop now builds columns ---
                 eventsToShow.forEach(event => {
                     newDisplayIds.add(event.id);
                     const item = document.createElement('div');
                     
                     const isNew = !previouslyDisplayedIds.has(event.id);
-                    // The whole item is now one line, replacing the old structure.
                     item.className = isNew ? 'event-item event-line new-event' : 'event-item event-line';
 
-                    // --- Constructing the new detailed string ---
+                    // 1. Prepare all the data pieces for each column
                     const time = event.time.extra ? `${event.time.elapsed}+${event.time.extra}'` : `${event.time.elapsed}'`;
                     const icon = getIconForEvent(event);
                     const eventText = getEventText(event);
@@ -123,23 +150,27 @@
                     const player = `<strong>${event.player.name}</strong>`;
 
                     let teamDisplayString;
-                    // Check which team the event belongs to and make them bold.
                     if (event.team.id === event.fixtureInfo.teams.home.id) {
                         teamDisplayString = `<strong>${homeTeam}</strong> ${homeScore}-${awayScore} ${awayTeam}`;
                     } else {
                         teamDisplayString = `${homeTeam} ${homeScore}-${awayScore} <strong>${awayTeam}</strong>`;
                     }
                     
-                    // Combine all parts into the final string.
-                    item.innerHTML = `${time} - ${icon} ${eventText} - ${teamDisplayString} - ${player}`;
+                    // 2. Build the final HTML with a div for each column
+                    item.innerHTML = `
+                        <div class="col-time">${time}</div>
+                        <div class="col-event">${icon} ${eventText}</div>
+                        <div class="col-fixture">${teamDisplayString}</div>
+                        <div class="col-player">${player}</div>
+                    `;
                     
                     eventsList.appendChild(item);
 
-                    // Add the animation class fade-out timer
                     if (isNew) {
                          setTimeout(() => item.classList.remove('new-event'), 500);
                     }
                 });
+                // --- MODIFICATION END ---
 
                 previouslyDisplayedIds = newDisplayIds;
 
@@ -147,7 +178,6 @@
                     eventsList.innerHTML = `<div class="no-events">No recent events.</div>`;
                 }
             }
-            // --- MODIFICATION END ---
         });
     </script>
 </body>
