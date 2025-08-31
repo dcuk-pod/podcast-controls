@@ -12,15 +12,13 @@
         </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- NEW: Firebase config is now embedded directly in the script ---
-            // REASON: This removes the need for an extra file and keeps the overlay self-contained.
             const firebaseConfig = {
                 apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
-  authDomain: "scoreboard-control.firebaseapp.com",
-  projectId: "scoreboard-control",
-  storageBucket: "scoreboard-control.firebasestorage.app",
-  messagingSenderId: "438021450087",
-  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.firebasestorage.app",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
             };
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
@@ -79,15 +77,16 @@
                 }
             }
 
+            // --- MODIFICATION START ---
             function updateTicker(events) {
                 const eventsList = document.getElementById('events-list');
                 if (!events || !eventsList) return;
                 
-                // --- MODIFICATION START ---
-                // REASON: Instead of just reversing the array, we now filter out bad data and properly sort by time.
-                // This ensures the ticker is always accurate and clean.
-                // 1. .filter() removes any events where the player name is missing (or the 'assist' name for subs).
-                // 2. .sort() orders the events by elapsed time descending. If minutes are the same, it uses extra time as a tie-breaker.
+                // REASON: The previous logic could lead to incorrect ordering.
+                // This new approach rebuilds the list on each update to guarantee the correct order (latest events first),
+                // while smartly applying animations only to events that are genuinely new.
+
+                // 1. Filter out bad data and sort all events descending by time (newest first).
                 const sortedEvents = events
                     .filter(event => {
                         if (event.type === 'subst') {
@@ -103,55 +102,64 @@
                         const extraB = b.time.extra || 0;
                         return extraB - extraA;
                     });
-                // --- MODIFICATION END ---
 
-                // We now iterate over the correctly filtered and sorted events
-                sortedEvents.forEach(event => {
-                    const eventId = `${event.team.id}-${event.time.elapsed}-${event.player.id}-${event.detail}`;
-                    if (!displayedEventIds.has(eventId)) {
-                        
-                        const item = document.createElement('div');
-                        item.className = 'event-item new-event';
-                        item.dataset.eventId = eventId;
-                        
-                        const eventTime = event.time.extra ? `${event.time.elapsed}+${event.time.extra}` : event.time.elapsed;
-                        const icon = getIconForEvent(event);
-                        
-                        let detailText = '';
-                        if (event.type === 'subst') {
-                            detailText = `${event.player.name} ▲ | ${event.assist.name} ▼`;
-                        } else {
-                            detailText = `${event.player.name} (${event.detail || ''})`;
-                        }
-                        
-                        item.innerHTML = `
-                            <div class="event-time">${eventTime}'</div>
-                            <div class="event-icon">${icon}</div>
-                            <div class="event-details"></div>
-                        `;
+                // 2. Take only the most recent events, up to the maximum display limit.
+                const eventsToShow = sortedEvents.slice(0, MAX_EVENTS);
+                const newEventIds = new Set();
+                
+                // 3. Clear the current list in the DOM.
+                eventsList.innerHTML = '';
 
-                        if(eventsList.firstChild && eventsList.firstChild.className.includes('no-events')) {
-                            eventsList.innerHTML = '';
-                        }
-                        eventsList.prepend(item);
-                        displayedEventIds.add(eventId);
+                // 4. Iterate through the correctly sorted events we want to show and build the list.
+                eventsToShow.forEach(event => {
+                    // Make the event ID more unique by including the event type
+                    const eventId = `${event.team.id}-${event.time.elapsed}-${event.player.id}-${event.type}-${event.detail}`;
+                    newEventIds.add(eventId);
 
-                        typewriterEffect(item.querySelector('.event-details'), detailText);
-                        
+                    const item = document.createElement('div');
+                    
+                    // Check if this event was displayed in the last update.
+                    const isNew = !displayedEventIds.has(eventId);
+                    item.className = isNew ? 'event-item new-event' : 'event-item';
+
+                    const eventTime = event.time.extra ? `${event.time.elapsed}+${event.time.extra}` : event.time.elapsed;
+                    const icon = getIconForEvent(event);
+                    
+                    let detailText = '';
+                    if (event.type === 'subst') {
+                        detailText = `${event.player.name} ▲ | ${event.assist.name} ▼`;
+                    } else {
+                        detailText = `${event.player.name} (${event.detail || ''})`;
+                    }
+                    
+                    item.innerHTML = `
+                        <div class="event-time">${eventTime}'</div>
+                        <div class="event-icon">${icon}</div>
+                        <div class="event-details"></div>
+                    `;
+
+                    // Add the created item to the list.
+                    eventsList.appendChild(item);
+                    
+                    const detailElement = item.querySelector('.event-details');
+
+                    // 5. Apply effects only if the event is new to avoid re-animating old events.
+                    if (isNew) {
+                        typewriterEffect(detailElement, detailText);
                         setTimeout(() => item.classList.remove('new-event'), 500);
-
-                        while (eventsList.children.length > MAX_EVENTS) {
-                            const childToRemove = eventsList.lastChild;
-                            displayedEventIds.delete(childToRemove.dataset.eventId);
-                            eventsList.removeChild(childToRemove);
-                        }
+                    } else {
+                        detailElement.textContent = detailText; // For existing events, just set the text directly.
                     }
                 });
+
+                // 6. Update the master set of displayed IDs for the next update cycle.
+                displayedEventIds = newEventIds;
                 
                 if (eventsList.children.length === 0) {
                     eventsList.innerHTML = `<div class="no-events">No events yet.</div>`;
                 }
             }
+            // --- MODIFICATION END ---
         });
     </script>
 </body>

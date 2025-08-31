@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>League Events Ticker</title>
+    <title>Match Events Ticker</title>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
     <link rel="stylesheet" href="ticker_style.css">
@@ -12,33 +12,31 @@
         </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- NEW: Firebase config is now embedded directly in the script ---
-            // REASON: This removes the need for an extra file and keeps the overlay self-contained.
             const firebaseConfig = {
                 apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
-  authDomain: "scoreboard-control.firebaseapp.com",
-  projectId: "scoreboard-control",
-  storageBucket: "scoreboard-control.firebasestorage.app",
-  messagingSenderId: "438021450087",
-  appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.firebasestorage.app",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
             };
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
 
             const wrapper = document.getElementById('ticker-container-wrapper');
-            const leagueEventsDocRef = db.collection('scoreboard').doc('leagueEvents');
-            const leagueEventsDataDocRef = db.collection('scoreboard').doc('leagueEventsData');
+            const matchEventsDocRef = db.collection('scoreboard').doc('matchEvents');
+            const matchEventsDataDocRef = db.collection('scoreboard').doc('matchEventsData');
             
             let displayedEventIds = new Set();
             const MAX_EVENTS = 5; // Max events to show at once
 
-            leagueEventsDocRef.onSnapshot((doc) => {
+            matchEventsDocRef.onSnapshot((doc) => {
                 if (doc.exists && doc.data().show) {
                     if (!document.getElementById('ticker-container')) {
                         wrapper.innerHTML = `
                             <div class="ticker-container" id="ticker-container">
                                 <div class="ticker-header">
-                                    <h1>League Events</h1>
+                                    <h1>Match Events</h1>
                                 </div>
                                 <div class="events-list-viewport" id="events-list"></div>
                             </div>
@@ -50,7 +48,7 @@
                 }
             });
 
-            leagueEventsDataDocRef.onSnapshot((doc) => {
+            matchEventsDataDocRef.onSnapshot((doc) => {
                 if (doc.exists) {
                     updateTicker(doc.data().events);
                 }
@@ -70,20 +68,32 @@
             }
             
             function getIconForEvent(event) {
-                if (event.type === 'Goal') return '⚽';
-                if (event.type === 'Card') return event.detail === 'Yellow Card' ? '🟨' : '🟥';
-                return 'ℹ️';
+                switch (event.type) {
+                    case 'Goal': return '⚽';
+                    case 'Card': return event.detail === 'Yellow Card' ? '🟨' : '🟥';
+                    case 'subst': return '🔄';
+                    case 'Var': return '🖥️';
+                    default: return 'ℹ️';
+                }
             }
 
+            // --- MODIFICATION START ---
             function updateTicker(events) {
                 const eventsList = document.getElementById('events-list');
                 if (!events || !eventsList) return;
                 
-                // --- MODIFICATION START ---
-                // REASON: Applying the same filtering and sorting logic as the match events ticker.
-                // This prevents duplicate or broken events and ensures the list is always correctly sorted by time.
+                // REASON: The previous logic could lead to incorrect ordering.
+                // This new approach rebuilds the list on each update to guarantee the correct order (latest events first),
+                // while smartly applying animations only to events that are genuinely new.
+
+                // 1. Filter out bad data and sort all events descending by time (newest first).
                 const sortedEvents = events
-                    .filter(event => event.player && event.player.name && event.team && event.team.name)
+                    .filter(event => {
+                        if (event.type === 'subst') {
+                            return event.player && event.player.name && event.assist && event.assist.name;
+                        }
+                        return event.player && event.player.name;
+                    })
                     .sort((a, b) => {
                         if (b.time.elapsed !== a.time.elapsed) {
                             return b.time.elapsed - a.time.elapsed;
@@ -92,48 +102,64 @@
                         const extraB = b.time.extra || 0;
                         return extraB - extraA;
                     });
-                // --- MODIFICATION END ---
 
-                sortedEvents.forEach(event => {
-                    const eventId = `${event.fixtureInfo.fixture.id}-${event.type}-${event.player.id}-${event.time.elapsed}-${event.detail}`;
+                // 2. Take only the most recent events, up to the maximum display limit.
+                const eventsToShow = sortedEvents.slice(0, MAX_EVENTS);
+                const newEventIds = new Set();
+                
+                // 3. Clear the current list in the DOM.
+                eventsList.innerHTML = '';
+
+                // 4. Iterate through the correctly sorted events we want to show and build the list.
+                eventsToShow.forEach(event => {
+                    // Make the event ID more unique by including the event type
+                    const eventId = `${event.team.id}-${event.time.elapsed}-${event.player.id}-${event.type}-${event.detail}`;
+                    newEventIds.add(eventId);
+
+                    const item = document.createElement('div');
                     
-                    if (!displayedEventIds.has(eventId)) {
-                        if (eventsList.firstChild && eventsList.firstChild.className.includes('no-events')) {
-                            eventsList.innerHTML = '';
-                        }
-                        
-                        const item = document.createElement('div');
-                        item.className = 'event-item new-event';
-                        item.dataset.eventId = eventId;
-                        
-                        const eventTime = event.time.extra ? `${event.time.elapsed}+${event.time.extra}` : event.time.elapsed;
-                        const icon = getIconForEvent(event);
-                        const detailText = `${event.player.name} (${event.team.name})`;
+                    // Check if this event was displayed in the last update.
+                    const isNew = !displayedEventIds.has(eventId);
+                    item.className = isNew ? 'event-item new-event' : 'event-item';
 
-                        item.innerHTML = `
-                            <div class="event-time">${eventTime}'</div>
-                            <div class="event-icon">${icon}</div>
-                            <div class="event-details"></div>
-                        `;
+                    const eventTime = event.time.extra ? `${event.time.elapsed}+${event.time.extra}` : event.time.elapsed;
+                    const icon = getIconForEvent(event);
+                    
+                    let detailText = '';
+                    if (event.type === 'subst') {
+                        detailText = `${event.player.name} ▲ | ${event.assist.name} ▼`;
+                    } else {
+                        detailText = `${event.player.name} (${event.detail || ''})`;
+                    }
+                    
+                    item.innerHTML = `
+                        <div class="event-time">${eventTime}'</div>
+                        <div class="event-icon">${icon}</div>
+                        <div class="event-details"></div>
+                    `;
 
-                        eventsList.prepend(item);
-                        displayedEventIds.add(eventId);
-                        typewriterEffect(item.querySelector('.event-details'), detailText);
-                        
+                    // Add the created item to the list.
+                    eventsList.appendChild(item);
+                    
+                    const detailElement = item.querySelector('.event-details');
+
+                    // 5. Apply effects only if the event is new to avoid re-animating old events.
+                    if (isNew) {
+                        typewriterEffect(detailElement, detailText);
                         setTimeout(() => item.classList.remove('new-event'), 500);
+                    } else {
+                        detailElement.textContent = detailText; // For existing events, just set the text directly.
                     }
                 });
 
-                while (eventsList.children.length > MAX_EVENTS) {
-                    const childToRemove = eventsList.lastChild;
-                    displayedEventIds.delete(childToRemove.dataset.eventId);
-                    eventsList.removeChild(childToRemove);
-                }
+                // 6. Update the master set of displayed IDs for the next update cycle.
+                displayedEventIds = newEventIds;
                 
                 if (eventsList.children.length === 0) {
-                    eventsList.innerHTML = `<div class="no-events">No recent events.</div>`;
+                    eventsList.innerHTML = `<div class="no-events">No events yet.</div>`;
                 }
             }
+            // --- MODIFICATION END ---
         });
     </script>
 </body>
