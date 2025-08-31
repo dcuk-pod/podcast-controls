@@ -6,6 +6,17 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
     <link rel="stylesheet" href="scroller.css">
+
+    <style>
+        .panel-filmstrip {
+            /* This controls the speed of the slide animation */
+            transition: transform 0.5s ease-in-out;
+        }
+        .filmstrip-no-transition {
+            /* This helper class is used to make the jump back to the start instant */
+            transition: none !important;
+        }
+    </style>
 </head>
 <body>
     <div id="main-container" class="main-container">
@@ -24,7 +35,6 @@
             firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
 
-            // COMMENT: Define the base URL for your GitHub Pages assets.
             const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
 
             const mainContainer = document.getElementById('main-container');
@@ -118,7 +128,6 @@
                     const homeScore = liveMatchData?.goals?.home ?? currentFixtureDetail.goals?.home ?? 0;
                     const awayScore = liveMatchData?.goals?.away ?? currentFixtureDetail.goals?.away ?? 0;
                     
-                    // COMMENT: Updated team logo paths for the stats header.
                     const homeLogoUrl = `${assetsBaseUrl}assets/logos/${currentFixtureDetail.teams.home.id}.png`;
                     const awayLogoUrl = `${assetsBaseUrl}assets/logos/${currentFixtureDetail.teams.away.id}.png`;
 
@@ -166,24 +175,64 @@
                 return ratingsHTML;
             }
 
+            // --- MODIFICATION START: The carousel logic is completely rewritten ---
             function startCarousel() {
                 if (panelInterval) clearInterval(panelInterval);
+
                 const filmstrip = document.getElementById('filmstrip');
                 const panelTitle = document.getElementById('panel-title');
                 if (!filmstrip || !panelTitle) return;
+
+                const originalPanels = Array.from(filmstrip.children);
+                const originalPanelCount = originalPanels.length;
+                if (originalPanelCount <= 1) return;
+
+                // 1. Clone the first panel and add it to the end of the filmstrip
+                const firstPanelClone = originalPanels[0].cloneNode(true);
+                filmstrip.appendChild(firstPanelClone);
+                
                 let currentPanel = 0;
-                const totalPanels = filmstrip.children.length;
-                if (totalPanels <= 1) return;
-                filmstrip.style.width = `${totalPanels * 100}%`;
-                filmstrip.childNodes.forEach(node => node.style.width = `${100 / totalPanels}%`);
-                filmstrip.style.transform = `translateX(0%)`;
-                panelTitle.textContent = filmstrip.children[0].dataset.title || 'Live Ticker';
+                const totalChildrenCount = filmstrip.children.length;
+
+                // 2. Adjust widths to account for the new cloned panel
+                filmstrip.style.width = `${totalChildrenCount * 100}%`;
+                Array.from(filmstrip.children).forEach(node => node.style.width = `${100 / totalChildrenCount}%`);
+
+                // Set initial state
+                filmstrip.style.transform = 'translateX(0%)';
+                panelTitle.textContent = originalPanels[0].dataset.title;
+
                 panelInterval = setInterval(() => {
-                    currentPanel = (currentPanel + 1) % totalPanels;
-                    filmstrip.style.transform = `translateX(-${currentPanel * (100 / totalPanels)}%)`;
-                    panelTitle.textContent = filmstrip.children[currentPanel].dataset.title || 'Live Ticker';
+                    currentPanel++;
+                    
+                    // 3. Animate the slide to the next panel
+                    filmstrip.style.transform = `translateX(-${currentPanel * (100 / totalChildrenCount)}%)`;
+
+                    // 4. Check if the next panel is the cloned one
+                    if (currentPanel === originalPanelCount) {
+                        // If it is, we are showing the clone. The title should be the first panel's title.
+                        panelTitle.textContent = originalPanels[0].dataset.title;
+
+                        // 5. After the slide animation finishes, perform the "magic jump"
+                        setTimeout(() => {
+                            filmstrip.classList.add('filmstrip-no-transition'); // Disable animation
+                            filmstrip.style.transform = 'translateX(0%)'; // Instantly jump to the start
+                            currentPanel = 0; // Reset the counter
+
+                            // Force the browser to apply the changes immediately
+                            filmstrip.offsetHeight; 
+
+                            // Re-enable the animation for the next slide
+                            filmstrip.classList.remove('filmstrip-no-transition');
+                        }, 500); // This timeout MUST match the transition duration in the CSS
+
+                    } else {
+                        // If it's a normal panel, just update the title
+                        panelTitle.textContent = originalPanels[currentPanel].dataset.title;
+                    }
                 }, panelSwitchInterval);
             }
+             // --- MODIFICATION END ---
         });
     </script>
 </body>

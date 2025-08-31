@@ -26,7 +26,6 @@
             
             const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
 
-            // --- NEW: Integrated your full team color lists ---
             const TEAM_COLORS = {
               1595: 'rgb(85, 150, 71)',     // Seattle Sounders FC (Green)
               1596: 'rgb(0, 102, 175)',     // San Jose Earthquakes (Blue)
@@ -107,8 +106,6 @@
             let currentFixtureDetail = null;
             let currentStatsData = null;
             
-            // --- UPDATED HELPER FUNCTION ---
-            // REASON: This now returns an object with both primary and alternate colors for more dynamic styling.
             function getTeamColors(teamId) {
                 const primary = TEAM_COLORS[teamId] || TEAM_COLORS['default'];
                 const alternate = TEAM_COLORS_ALT[teamId] || TEAM_COLORS_ALT['default'];
@@ -157,7 +154,6 @@
                 const awayLogoUrl = `${assetsBaseUrl}assets/logos/${fixture.teams.away.id}.png`;
                 const leagueLogoUrl = `${assetsBaseUrl}assets/leagues/${fixture.league.id}.png`;
 
-                // --- MODIFICATION: Get the full color object for each team ---
                 const homeColors = getTeamColors(fixture.teams.home.id);
                 const awayColors = getTeamColors(fixture.teams.away.id);
 
@@ -171,17 +167,14 @@
                 const fixtureDate = new Date(fixture.fixture.date);
                 const formattedDate = fixtureDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
-                // --- MODIFICATION: Apply colors to the team name spans ---
-                // NOTE: You may need to add padding to the '.team-name' class in your CSS for this to look best.
-                // e.g., .team-name { padding: 5px 10px; border-radius: 5px; }
                 content.innerHTML += `
                     <div class="top-bar">
                         <img src="${leagueLogoUrl}" alt="${fixture.league.name}" class="league-logo" onerror="this.src='${fixture.league.logo}'">
                         <div class="fixture-details">
                             <div class="fixture-name">
-                                <span class="team-name home" style="background-color: ${homeColors.primary}; color: ${homeColors.alternate};">${fixture.teams.home.name}</span>
+                                <span class="team-name home" style="color: ${homeColors.primary};">${fixture.teams.home.name}</span>
                                 <span class="scoreline">${fixture.goals.home} - ${fixture.goals.away}</span>
-                                <span class="team-name away" style="background-color: ${awayColors.primary}; color: ${awayColors.alternate};">${fixture.teams.away.name}</span>
+                                <span class="team-name away" style="color: ${awayColors.primary};">${fixture.teams.away.name}</span>
                             </div>
                             <div class="fixture-meta">
                                 ${formattedDate} | ${fixture.fixture.venue.name}
@@ -213,10 +206,9 @@
                     const homeWidth = total > 0 ? (homeValue / total) * 100 : 50;
                     const awayWidth = total > 0 ? (awayValue / total) * 100 : 50;
 
-                    // --- MODIFICATION: Use both primary (bar) and alternate (text) colors in the style attributes ---
                     statsArea.innerHTML += `
                         <div class="stat-row">
-                            <div class="stat-value home" style="color: ${homeColors.alternate}; background-color: ${homeColors.primary};">${homeStat.value || 0}</div>
+                            <div class="stat-value home" style="color: ${homeColors.primary};">${homeStat.value || 0}</div>
                             <div class="stat-bar-container home">
                                 <div class="stat-bar" style="width: ${homeWidth}%; background-color: ${homeColors.primary};"></div>
                             </div>
@@ -224,7 +216,7 @@
                             <div class="stat-bar-container away">
                                 <div class="stat-bar" style="width: ${awayWidth}%; background-color: ${awayColors.primary};"></div>
                             </div>
-                            <div class="stat-value away" style="color: ${awayColors.alternate}; background-color: ${awayColors.primary};">${awayStat.value || 0}</div>
+                            <div class="stat-value away" style="color: ${awayColors.primary};">${awayStat.value || 0}</div>
                         </div>
                     `;
                 });
