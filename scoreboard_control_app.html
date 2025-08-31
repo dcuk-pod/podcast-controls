@@ -485,6 +485,10 @@
                 const sessionApiCallsSpan = document.getElementById('session-api-calls');
                 let sessionApiCallCount = 0;
                 async function fetchApiProxy(apiPath) {
+                    // COMMENT: This new line will log every API call to the browser's console.
+                    // This will show us the exact timestamp and endpoint for every request.
+                    console.log(`[${new Date().toLocaleTimeString()}] Making API call to: ${apiPath}`);
+
                     const response = await fetch(`/api${apiPath}`);
                     sessionApiCallCount++; 
                     document.getElementById('session-api-calls').textContent = sessionApiCallCount;
@@ -638,7 +642,7 @@
 
                 function startPolling(fixtureId) {
                     if (statsPollingInterval) clearInterval(statsPollingInterval);
-                    statsPollingInterval = setInterval(() => pollStatsData(fixtureId), 60000);
+                    statsPollingInterval = setInterval(() => pollStatsData(fixtureId), 30000);
                     console.log(`Started polling for fixture ${fixtureId} every 60 seconds.`);
                     statusText.textContent = `Live polling enabled.`;
                 }
