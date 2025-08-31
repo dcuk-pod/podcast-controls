@@ -3,72 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Q&A</title>
-    <!-- Firebase scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-    <script src="firebase-init.js"></script>
     <style>
+        /* CSS styles remain unchanged */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
-
-        body {
-            background-color: transparent;
-            font-family: 'Poppins', sans-serif;
-            color: #ffffff;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .qa-container {
-            background-color: #ffffff;
-            padding: 15px 20px;
-            min-height: 75px;
-            /* MODIFIED: Width changed to 960px */
-            width: 960px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        .qa-container.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        #qa-logo {
-            width: 60px;
-            height: 60px;
-            flex-shrink: 0;
-        }
-
-        .qa-content {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            /* NEW: Added to ensure the content area is flexible */
-            flex-grow: 1;
-            min-width: 0;
-        }
-
-        .qa-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #686868;
-        }
-
-        .qa-question {
-            font-size: 24px; /* This is now the MAX font size */
-            font-weight: 400;
-            line-height: 1.3;
-            color:black;
-            /* NEW: Prevents text from wrapping to a new line */
-            white-space: nowrap;
-        }
+        body{background-color:transparent;font-family:'Poppins',sans-serif;color:#fff;margin:0;padding:0;overflow:hidden}.qa-container{background-color:#fff;padding:15px 20px;min-height:75px;width:960px;box-shadow:0 4px 15px rgba(0,0,0,.1);border-radius:10px;display:flex;align-items:center;gap:20px;opacity:0;transform:translateY(30px);transition:opacity .6s ease-out,transform .6s ease-out}.qa-container.visible{opacity:1;transform:translateY(0)}#qa-logo{width:60px;height:60px;flex-shrink:0}.qa-content{display:flex;flex-direction:column;gap:5px;flex-grow:1;min-width:0}.qa-title{font-size:18px;font-weight:700;color:#686868}.qa-question{font-size:24px;font-weight:400;line-height:1.3;color:#000;white-space:nowrap}
     </style>
 </head>
 <body>
@@ -81,47 +21,21 @@
     </div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+            authDomain: "scoreboard-control.firebaseapp.com",
+            projectId: "scoreboard-control",
+            storageBucket: "scoreboard-control.appspot.com",
+            messagingSenderId: "438021450087",
+            appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const container = document.getElementById('qa-container');
-            const logoElement = document.getElementById('qa-logo');
-            const titleElement = document.getElementById('qa-title');
-            const questionElement = document.getElementById('qa-question');
-
-            const currentQuestionDocRef = db.collection('podcast').doc('currentQuestion');
-
-            // --- NEW: Function to adjust font size ---
-            function adjustFontSize(element) {
-                // Reset to max font size to start
-                element.style.fontSize = '24px';
-                let currentFontSize = 24;
-
-                // Check for overflow and reduce font size until it fits
-                // scrollWidth is the actual width of the text, clientWidth is the visible width of the container
-                while (element.scrollWidth > element.clientWidth && currentFontSize > 10) {
-                    currentFontSize--;
-                    element.style.fontSize = `${currentFontSize}px`;
-                }
-            }
-
-            currentQuestionDocRef.onSnapshot(doc => {
-                if (doc.exists && doc.data().show) {
-                    const questionData = doc.data();
-                    
-                    logoElement.src = `images/${questionData.source}.png`;
-
-                    const sourceCapitalized = questionData.source.charAt(0).toUpperCase() + questionData.source.slice(1);
-                    titleElement.textContent = `From ${sourceCapitalized} - ${questionData.name}`;
-                    
-                    questionElement.textContent = `"${questionData.text}"`;
-
-                    // Call the adjust function after setting the text
-                    adjustFontSize(questionElement);
-
-                    container.classList.add('visible');
-                } else {
-                    container.classList.remove('visible');
-                }
-            });
+            // All of your existing JavaScript for this page remains unchanged
+            const container=document.getElementById("qa-container"),logoElement=document.getElementById("qa-logo"),titleElement=document.getElementById("qa-title"),questionElement=document.getElementById("qa-question"),currentQuestionDocRef=db.collection("podcast").doc("currentQuestion");function adjustFontSize(e){e.style.fontSize="24px";let t=24;for(;e.scrollWidth>e.clientWidth&&t>10;)t--,e.style.fontSize=`${t}px`}currentQuestionDocRef.onSnapshot(e=>{if(e.exists&&e.data().show){const t=e.data();logoElement.src=`images/${t.source}.png`;const o=t.source.charAt(0).toUpperCase()+t.source.slice(1);titleElement.textContent=`From ${o} - ${t.name}`,questionElement.textContent=`"${t.text}"`,adjustFontSize(questionElement),container.classList.add("visible")}else container.classList.remove("visible")});
         });
     </script>
 </body>

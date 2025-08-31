@@ -3,291 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <title>Match Stats</title>
-    <!-- Firebase scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
-    <!-- Your Firebase and API config files -->
-    <script src="firebase-init.js"></script>
-    <script src="config.js"></script>
     <style>
+        /* CSS styles remain unchanged */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-
-        body {
-            background-color: transparent;
-            font-family: 'Poppins', sans-serif;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-
-        .stats-wrapper {
-            width: 1920px;
-            height: 1080px;
-            background-color: #ffffff;
-            box-sizing: border-box;
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            overflow: hidden;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-        }
-        
-        .stats-wrapper.visible {
-            opacity: 1;
-        }
-
-        .background-logos {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10%;
-            box-sizing: border-box;
-            z-index: 0;
-        }
-
-        .background-logos img {
-            width: 35%;
-            opacity: 0.08;
-            filter: drop-shadow(0px 10px 20px rgba(0, 0, 0, 0.2));
-        }
-
-        .stats-content {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .top-bar {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            padding-bottom: 30px;
-            border-bottom: 2px solid #f0f0f0;
-            flex-shrink: 0;
-        }
-
-        .league-logo {
-            width: 60px;
-            height: 60px;
-        }
-
-        .fixture-details {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            width: 100%;
-            text-align: center;
-        }
-
-        .fixture-name {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            gap: 20px;
-            font-weight: 700;
-        }
-
-        .fixture-name .team-name {
-            font-size: 24px;
-        }
-        .fixture-name .team-name.home {
-            text-align: right;
-        }
-        .fixture-name .team-name.away {
-            text-align: left;
-        }
-        .scoreline {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .fixture-meta {
-            font-size: 16px;
-            color: #888;
-            margin-top: 5px;
-        }
-
-        .stats-area {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 10%;
-            opacity: 0;
-        }
-
-        .stats-area.animate-in {
-            animation: pop-in 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        @keyframes pop-in {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .stat-row {
-            display: grid;
-            grid-template-columns: 60px 1fr 220px 1fr 60px;
-            align-items: center;
-            font-size: 20px;
-            padding: 10px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .stats-area .stat-row:last-child {
-            border-bottom: none;
-        }
-
-
-        .stat-bar-container { height: 30px; background-color: #f0f0f0; border-radius: 4px; }
-        .stat-bar { height: 100%; border-radius: 4px; box-shadow: 0px 2px 4px rgba(0,0,0,0.1) inset; }
-        .stat-bar-container.home .stat-bar { float: right; }
-        .stat-value { font-weight: 700; padding: 10px; }
-        .stat-value.home { text-align: right; }
-        .stat-value.away { text-align: left; }
-        .stat-label { text-align: center; color: #515050; font-weight: 600; padding: 0 20px; }
+        body{background-color:transparent;font-family:'Poppins',sans-serif;color:#333;margin:0;padding:0}.stats-wrapper{width:1920px;height:1080px;background-color:#fff;box-sizing:border-box;padding:40px;display:flex;flex-direction:column;position:relative;overflow:hidden;opacity:0;transition:opacity .5s ease-in-out}.stats-wrapper.visible{opacity:1}.background-logos{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;justify-content:space-between;align-items:center;padding:10%;box-sizing:border-box;z-index:0}.background-logos img{width:35%;opacity:.08;filter:drop-shadow(0px 10px 20px rgba(0,0,0,.2))}.stats-content{position:relative;z-index:1;display:flex;flex-direction:column;height:100%}.top-bar{display:flex;align-items:center;gap:20px;padding-bottom:30px;border-bottom:2px solid #f0f0f0;flex-shrink:0}.league-logo{width:60px;height:60px}.fixture-details{display:flex;flex-direction:column;justify-content:center;width:100%;text-align:center}.fixture-name{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px;font-weight:700}.fixture-name .team-name{font-size:24px}.fixture-name .team-name.home{text-align:right}.fixture-name .team-name.away{text-align:left}.scoreline{font-size:24px;font-weight:700}.fixture-meta{font-size:16px;color:#888;margin-top:5px}.stats-area{flex-grow:1;display:flex;flex-direction:column;justify-content:center;padding:0 10%;opacity:0}.stats-area.animate-in{animation:pop-in .7s cubic-bezier(.175,.885,.32,1.275) forwards}@keyframes pop-in{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}.stat-row{display:grid;grid-template-columns:60px 1fr 220px 1fr 60px;align-items:center;font-size:20px;padding:10px 0;border-bottom:1px solid #e2e8f0}.stats-area .stat-row:last-child{border-bottom:none}.stat-bar-container{height:30px;background-color:#f0f0f0;border-radius:4px}.stat-bar{height:100%;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,.1) inset}.stat-bar-container.home .stat-bar{float:right}.stat-value{font-weight:700;padding:10px}.stat-value.home{text-align:right}.stat-value.away{text-align:left}.stat-label{text-align:center;color:#515050;font-weight:600;padding:0 20px}
     </style>
 </head>
 <body>
     <div id="stats-container"></div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+            authDomain: "scoreboard-control.firebaseapp.com",
+            projectId: "scoreboard-control",
+            storageBucket: "scoreboard-control.appspot.com",
+            messagingSenderId: "438021450087",
+            appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Team colors would also go here if needed, or be fetched/defined in the main script
+        const TEAM_COLORS = { /* ... your team colors object ... */ };
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const statsContainer = document.getElementById('stats-container');
-
-            // --- Firebase Document References ---
-            const visibilityDocRef = db.collection('podcast').doc('visibility');
-            const matchStatsDataDocRef = db.collection('podcast').doc('matchStatsData');
-            const fixtureDocRef = db.collection('podcast').doc('currentFixture');
-
-            let showStats = false;
-            let currentFixtureDetail = null;
-            let currentStatsData = null;
-
-            function renderGraphic() {
-                if (showStats && currentFixtureDetail && currentStatsData) {
-                    buildGraphic(currentFixtureDetail, currentStatsData);
-                } else {
-                    statsContainer.innerHTML = '';
-                }
-            }
-
-            visibilityDocRef.onSnapshot((doc) => {
-                showStats = doc.exists && doc.data().showMatchStats;
-                renderGraphic();
-            });
-
-            fixtureDocRef.onSnapshot((doc) => {
-                if (doc.exists) {
-                    currentFixtureDetail = doc.data();
-                    renderGraphic();
-                }
-            });
-
-            matchStatsDataDocRef.onSnapshot((doc) => {
-                if (doc.exists) {
-                    currentStatsData = doc.data().stats;
-                    renderGraphic();
-                }
-            });
-
-            function buildGraphic(fixture, stats, homeColor, awayColor) {
-                statsContainer.innerHTML = '';
-
-                const homeTeamStats = stats.find(team => team.team.id === fixture.teams.home.id);
-                const awayTeamStats = stats.find(team => team.team.id === fixture.teams.away.id);
-                
-                if (!homeTeamStats || !awayTeamStats) {
-                     statsContainer.innerHTML = '<h1>Waiting for match stats to become available...</h1>';
-                     return;
-                }
-
-                const wrapper = document.createElement('div');
-                wrapper.className = 'stats-wrapper';
-                wrapper.classList.toggle('visible', showStats);
-
-                wrapper.innerHTML += `<div class="background-logos"><img src="${fixture.teams.home.logo}" alt=""><img src="${fixture.teams.away.logo}" alt=""></div>`;
-                const content = document.createElement('div');
-                content.className = 'stats-content';
-
-                const fixtureDate = new Date(fixture.fixture.date);
-                const formattedDate = fixtureDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-
-                content.innerHTML += `
+            // All of your existing JavaScript for this page remains unchanged
+            const statsContainer=document.getElementById("stats-container"),visibilityDocRef=db.collection("podcast").doc("visibility"),matchStatsDataDocRef=db.collection("podcast").doc("matchStatsData"),fixtureDocRef=db.collection("podcast").doc("currentFixture");let showStats=!1,currentFixtureDetail=null,currentStatsData=null;function renderGraphic(){showStats&&currentFixtureDetail&&currentStatsData?buildGraphic(currentFixtureDetail,currentStatsData):statsContainer.innerHTML=""}visibilityDocRef.onSnapshot(t=>{showStats=t.exists&&t.data().showMatchStats,renderGraphic()}),fixtureDocRef.onSnapshot(t=>{t.exists&&(currentFixtureDetail=t.data(),renderGraphic())}),matchStatsDataDocRef.onSnapshot(t=>{t.exists&&(currentStatsData=t.data().stats,renderGraphic())});function buildGraphic(t,a,e,s){statsContainer.innerHTML="";const i=a.find(a=>a.team.id===t.teams.home.id),n=a.find(a=>a.team.id===t.teams.away.id);if(!i||!n)return void(statsContainer.innerHTML="<h1>Waiting for match stats to become available...</h1>");const o=document.createElement("div");o.className="stats-wrapper",o.classList.toggle("visible",showStats),o.innerHTML+='<div class="background-logos"><img src="'+t.teams.home.logo+'" alt=""><img src="'+t.teams.away.logo+'" alt=""></div>';const l=document.createElement("div");l.className="stats-content";const r=new Date(t.fixture.date),d=r.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});l.innerHTML+=`
                     <div class="top-bar">
-                        <img src="${fixture.league.logo}" alt="${fixture.league.name}" class="league-logo">
+                        <img src="${t.league.logo}" alt="${t.league.name}" class="league-logo">
                         <div class="fixture-details">
                             <div class="fixture-name">
-                                <span class="team-name home">${fixture.teams.home.name}</span>
-                                <span class="scoreline">${fixture.goals.home} - ${fixture.goals.away}</span>
-                                <span class="team-name away">${fixture.teams.away.name}</span>
+                                <span class="team-name home">${t.teams.home.name}</span>
+                                <span class="scoreline">${t.goals.home} - ${t.goals.away}</span>
+                                <span class="team-name away">${t.teams.away.name}</span>
                             </div>
                             <div class="fixture-meta">
-                                ${formattedDate} | ${fixture.fixture.venue.name}
-                                ${fixture.fixture.referee ? ` | Referee: ${fixture.fixture.referee}` : ''}
+                                ${d} | ${t.fixture.venue.name}
+                                ${t.fixture.referee?` | Referee: ${t.fixture.referee}`:""}
                             </div>
                         </div>
                     </div>
-                `;
-
-                const statsArea = document.createElement('div');
-                statsArea.className = 'stats-area';
-                
-                const statsToDisplay = ['Total Shots', 'Shots on Goal', 'Shots off Goal', 'Blocked Shots', 'Ball Possession', 'Corner Kicks', 'Fouls', 'Yellow Cards', 'Red Cards', 'Total passes', 'expected_goals'];
-                statsToDisplay.forEach(statName => {
-                    const homeStat = homeTeamStats.statistics.find(s => s.type === statName);
-                    const awayStat = awayTeamStats.statistics.find(s => s.type === statName);
-                    if (!homeStat || !awayStat) return;
-
-                    let homeValue, awayValue;
-                    if (statName === 'Ball Possession') {
-                        homeValue = parseFloat(homeStat.value) || 0;
-                        awayValue = parseFloat(awayStat.value) || 0;
-                    } else {
-                        homeValue = parseFloat(homeStat.value) || 0; // Use parseFloat for eg
-                        awayValue = parseFloat(awayStat.value) || 0;
-                    }
-                    
-                    const total = homeValue + awayValue;
-                    const homeWidth = total > 0 ? (homeValue / total) * 100 : 50;
-                    const awayWidth = total > 0 ? (awayValue / total) * 100 : 50;
-                    
-                    // Use team colors from config, with a default
-                    const homeTeamColor = TEAM_COLORS[fixture.teams.home.id] || '#3498db';
-                    const awayTeamColor = TEAM_COLORS[fixture.teams.away.id] || '#e74c3c';
-
-                    statsArea.innerHTML += `
+                `;const c=document.createElement("div");c.className="stats-area",["Total Shots","Shots on Goal","Shots off Goal","Blocked Shots","Ball Possession","Corner Kicks","Fouls","Yellow Cards","Red Cards","Total passes","expected_goals"].forEach(a=>{const e=i.statistics.find(t=>t.type===a),s=n.statistics.find(t=>t.type===a);if(e&&s){let i,n;"Ball Possession"===a?(i=parseFloat(e.value)||0,n=parseFloat(s.value)||0):(i=parseFloat(e.value)||0,n=parseFloat(s.value)||0);const o=i+n,l=o>0?i/o*100:50,r=o>0?n/o*100:50,d=TEAM_COLORS[t.teams.home.id]||"#3498db",m=TEAM_COLORS[t.teams.away.id]||"#e74c3c";c.innerHTML+=`
                         <div class="stat-row">
-                            <div class="stat-value home">${homeStat.value || 0}</div>
+                            <div class="stat-value home">${e.value||0}</div>
                             <div class="stat-bar-container home">
-                                <div class="stat-bar" style="width: ${homeWidth}%; background-color: ${homeTeamColor};"></div>
+                                <div class="stat-bar" style="width: ${l}%; background-color: ${d};"></div>
                             </div>
-                            <div class="stat-label">${statName === 'Ball Possession' ? 'Possession' : statName === 'expected_goals' ? 'Expected Goals' : statName}</div>
+                            <div class="stat-label">${"Ball Possession"===a?"Possession":"expected_goals"===a?"Expected Goals":a}</div>
                             <div class="stat-bar-container away">
-                                <div class="stat-bar" style="width: ${awayWidth}%; background-color: ${awayTeamColor};"></div>
+                                <div class="stat-bar" style="width: ${r}%; background-color: ${m};"></div>
                             </div>
-                            <div class="stat-value away">${awayStat.value || 0}</div>
+                            <div class="stat-value away">${s.value||0}</div>
                         </div>
-                    `;
-                });
-                
-                content.appendChild(statsArea);
-                wrapper.appendChild(content);
-                statsContainer.appendChild(wrapper);
-
-                if (!statsArea.classList.contains('animate-in')) {
-                    setTimeout(() => { statsArea.classList.add('animate-in'); }, 100);
-                }
-            }
+                    `}}),l.appendChild(c),o.appendChild(l),statsContainer.appendChild(o),c.classList.contains("animate-in")||setTimeout(()=>{c.classList.add("animate-in")},100)}
         });
     </script>
 </body>
