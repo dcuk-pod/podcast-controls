@@ -96,20 +96,21 @@
                 const wrapper = document.createElement('div');
                 wrapper.className = 'stats-wrapper';
                 
+                // --- MODIFICATION: Top Bar HTML now includes the team logos ---
                 const topBarHTML = `
                     <div class="top-bar">
-                        <img src="${leagueLogoUrl}" alt="${fixture.league.name}" class="league-logo" onerror="this.src='${fixture.league.logo}'">
                         <div class="fixture-details">
                             <div class="fixture-name">
                                 <span class="team-name home">${fixture.teams.home.name}</span>
+                                <img src="${homeLogoUrl}" class="header-logo" onerror="this.src='${fixture.teams.home.logo}'">
                                 <span class="scoreline">${fixture.goals.home} - ${fixture.goals.away}</span>
+                                <img src="${awayLogoUrl}" class="header-logo" onerror="this.src='${fixture.teams.away.logo}'">
                                 <span class="team-name away">${fixture.teams.away.name}</span>
                             </div>
                         </div>
                     </div>
                 `;
 
-                // --- MODIFICATION: The gradient now runs from left to right (to right) ---
                 const createStatRow = (statName, customLabel) => {
                     const homeStat = homeTeamStats.statistics.find(s => s.type === statName);
                     const awayStat = awayTeamStats.statistics.find(s => s.type === statName);
@@ -121,6 +122,8 @@
                     const total = homeValue + awayValue;
                     const homeWidth = total > 0 ? (homeValue / total) * 100 : 50;
                     
+                    // COMMENT: This gradient now has a hard stop, creating a sharp vertical line
+                    // at the correct percentage point between the two colors.
                     const gradientStyle = `linear-gradient(to right, ${homeColors.primary} ${homeWidth}%, ${awayColors.primary} ${homeWidth}%)`;
 
                     return `
@@ -171,7 +174,6 @@
                     </div>
                 `;
                 
-                // --- MODIFICATION: Added all available stats to this section ---
                 const allStatsHTML = `
                      <div class="stats-card">
                         <h2 class="card-title">All Stats</h2>

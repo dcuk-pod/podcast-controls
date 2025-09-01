@@ -19,21 +19,12 @@ body {
     flex-direction: column;
 }
 
-/* --- HEADER / TOP BAR --- */
+/* --- MODIFICATION: Styles for the new Top Bar layout --- */
 .top-bar {
-    display: flex;
-    align-items: center;
-    gap: 20px;
     padding-bottom: 20px;
     border-bottom: 2px solid #e0e0e0;
     flex-shrink: 0;
     margin-bottom: 30px;
-}
-
-.league-logo {
-    width: 60px;
-    height: 60px;
-    object-fit: contain;
 }
 
 .fixture-details {
@@ -42,12 +33,20 @@ body {
 
 .fixture-name {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    /* This new grid layout perfectly centers the score and aligns the team info */
+    grid-template-columns: 1fr auto auto auto 1fr;
     align-items: center;
-    gap: 30px;
+    gap: 20px;
     font-size: 32px;
     font-weight: 900;
 }
+
+.header-logo {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+}
+
 .team-name.home { text-align: right; }
 .team-name.away { text-align: left; }
 .scoreline { font-size: 36px; }
@@ -122,7 +121,7 @@ body {
 .stat-value.away { text-align: left; }
 
 .stat-bar-container {
-    position: relative; /* Needed for the pseudo-element */
+    position: relative;
 }
 
 .stat-bar {
@@ -131,17 +130,8 @@ body {
     border-radius: 6px;
 }
 
-/* --- MODIFICATION: This pseudo-element creates the vertical split line --- */
-.stat-bar-container::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%; /* Position it in the middle */
-    width: 4px; /* Width of the line */
-    height: 100%;
-    background-color: #f4f6f9; /* Same as the page background for a "cutout" look */
-    /* REMOVED: The transform: skewX() is no longer needed */
-}
+/* --- MODIFICATION: The ::after pseudo-element has been removed --- */
+/* The sharp vertical line is now created by the linear-gradient in the HTML */
 
 
 /* --- Possession Pie Chart Styling --- */
