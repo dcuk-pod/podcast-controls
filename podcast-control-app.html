@@ -292,7 +292,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
-            // COMMENT: Service Worker Registration. This registers the same sw.js file for this app.
+            // Service Worker Registration. This registers the same sw.js file for this app.
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
                     navigator.serviceWorker.register('/sw.js')
@@ -305,7 +305,7 @@
                 });
             }
 
-            // COMMENT: Dark Mode Logic. This is identical to the other app.
+            // Dark Mode Logic. This is identical to the other app.
             const themeToggle = document.getElementById('theme-toggle');
             const themeColorMeta = document.getElementById('theme-color-meta');
 
@@ -343,8 +343,6 @@
                 }
             });
 
-
-            // All of your existing podcast app logic remains below this line...
             const firebaseConfig = {
                 apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
                 authDomain: "scoreboard-control.firebaseapp.com",
@@ -380,19 +378,27 @@
 
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                auth.signInWithEmailAndPassword(loginEmail.value, loginPassword.value)
+                // --- MODIFICATION START ---
+                // REASON: This is where we set the session persistence. This must be done
+                // BEFORE the user signs in.
+                auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+                    .then(() => {
+                        return auth.signInWithEmailAndPassword(loginEmail.value, loginPassword.value);
+                    })
                     .catch(error => {
                         console.error('Login Error:', error);
                         loginError.textContent = 'Error: Invalid email or password.';
                         loginError.classList.remove('hidden');
                     });
+                // --- MODIFICATION END ---
             });
             
             logoutBtn.addEventListener('click', () => auth.signOut());
 
             function initializeApp() {
-                const PODCAST_TEAM_ID = 1615;
+                // ... (The entire content of your podcast app's initializeApp function remains unchanged here) ...
                 
+                const PODCAST_TEAM_ID = 1615;
                 const podcastVisibilityDocRef = db.collection('podcast').doc('visibility');
                 const podcastFixtureDocRef = db.collection('podcast').doc('currentFixture');
                 const podcastFixturesDataDocRef = db.collection('podcast').doc('fixturesData');
@@ -404,9 +410,7 @@
                 const podcastCurrentQuestionDocRef = db.collection('podcast').doc('currentQuestion');
                 const podcastHeadlinesCollectionRef = db.collection('podcastHeadlines');
                 const podcastCurrentHeadlineDocRef = db.collection('podcast').doc('currentHeadline');
-
                 let sessionApiCallCount = 0;
-
                 const statusText = document.getElementById('podcast-status-text');
                 const yearSelect = document.getElementById('podcast-year-select');
                 const getFixturesBtn = document.getElementById('podcast-get-fixtures-btn');
@@ -424,9 +428,7 @@
                 const headlineImageInput = document.getElementById('headline-image-input');
                 const addHeadlineBtn = document.getElementById('add-headline-btn');
                 const headlinesListContainer = document.getElementById('headlines-list-container');
-                
                 document.getElementById('podcast-fixture-header').addEventListener('click', () => document.querySelector('.fixture-container').classList.toggle('collapsed'));
-
                 async function fetchApiProxy(apiPath) {
                     const response = await fetch(`/api${apiPath}`);
                     sessionApiCallCount++; 
@@ -437,7 +439,6 @@
                     }
                     return response.json();
                 }
-
                 async function fetchApiStatus() {
                     try {
                         const data = await fetchApiProxy('/status');
@@ -446,7 +447,6 @@
                         }
                     } catch (err) { console.error("Error fetching API status:", err); dailyApiCallsSpan.textContent = 'Error'; }
                 }
-
                 async function getFixturesForYear() {
                     const year = yearSelect.value;
                     statusText.textContent = `Checking for saved fixtures for ${year}...`;
@@ -467,7 +467,6 @@
                         }
                     } catch (err) { console.error("Error getting fixtures:", err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'red'; }
                 }
-                
                 function populateFixtureSelect(fixtures) {
                     fixtureSelect.innerHTML = ''; 
                     if (!fixtures || fixtures.length === 0) { fixtureSelect.innerHTML = '<option>No fixtures found</option>'; return; }
@@ -489,7 +488,6 @@
                         fixtureSelect.appendChild(optgroup);
                     }
                 }
-
                 async function loadFixtureData() {
                     const fixtureId = fixtureSelect.value;
                     if (!fixtureId || isNaN(fixtureId)) { statusText.textContent = "Error: Please select a valid fixture."; statusText.style.color = 'red'; return; }
@@ -502,7 +500,6 @@
                         statusText.textContent = `Successfully loaded: ${fixtureDetails.teams.home.name} vs ${fixtureDetails.teams.away.name}.`;
                     } catch (err) { console.error("PODCAST APP ERROR:", err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'red'; }
                 }
-
                 async function refreshGenericData(endpoint, docRef, dataKey, successMessage, errorMessage) {
                     const fixtureId = fixtureSelect.value;
                     if (endpoint.includes('fixture=') && (!fixtureId || isNaN(fixtureId))) {
@@ -519,7 +516,6 @@
                         statusText.textContent = `${successMessage} refreshed and saved.`; statusText.style.color = 'var(--success-color)';
                     } catch (err) { console.error(`Error refreshing ${successMessage}:`, err); statusText.textContent = `Error: ${err.message}`; statusText.style.color = 'var(--danger-color)'; }
                 }
-                
                 getFixturesBtn.addEventListener('click', getFixturesForYear);
                 loadFixtureBtn.addEventListener('click', loadFixtureData);
                 document.getElementById('podcast-refresh-fixtures-btn').addEventListener('click', () => refreshGenericData(`fixtures?season=${yearSelect.value}&team=${PODCAST_TEAM_ID}`, podcastFixturesDataDocRef, 'fixtures', 'Fixtures', 'fixtures'));
@@ -527,7 +523,6 @@
                 document.getElementById('podcast-refresh-prediction-btn').addEventListener('click', () => refreshGenericData(`predictions?fixture=${fixtureSelect.value}`, podcastPredictionDataDocRef, 'prediction', 'Prediction data', 'prediction data'));
                 document.getElementById('podcast-refresh-player-stats-btn').addEventListener('click', () => refreshGenericData(`fixtures/players?fixture=${fixtureSelect.value}`, podcastPlayerStatsDataDocRef, 'stats', 'Player stats', 'player stats'));
                 document.getElementById('podcast-refresh-match-stats-btn').addEventListener('click', () => refreshGenericData(`fixtures/statistics?fixture=${fixtureSelect.value}`, podcastMatchStatsDataDocRef, 'stats', 'Match stats', 'match stats'));
-
                 addQuestionBtn.addEventListener('click', () => {
                     const text = questionTextInput.value.trim();
                     const name = questionNameInput.value.trim();
@@ -541,7 +536,6 @@
                     questionTextInput.value = '';
                     questionNameInput.value = '';
                 });
-
                 podcastQuestionsCollectionRef.orderBy("createdAt", "desc").onSnapshot(snapshot => {
                     questionsListContainer.innerHTML = '';
                     if (snapshot.empty) { questionsListContainer.innerHTML = '<p>No questions added yet.</p>'; return; }
@@ -558,30 +552,25 @@
                         questionsListContainer.appendChild(item);
                     });
                 });
-
                 addHeadlineBtn.addEventListener('click', () => {
                     const title = headlineTitleInput.value.trim();
                     const description = headlineDescInput.value.trim();
                     const imageFile = headlineImageInput.value.trim();
-
                     if (!title || !description || !imageFile) {
                         statusText.textContent = "Please fill in all headline fields.";
                         statusText.style.color = 'var(--danger-color)';
                         return;
                     }
-
                     podcastHeadlinesCollectionRef.add({
                         title,
                         description,
                         image: imageFile,
                         createdAt: new Date()
                     });
-
                     headlineTitleInput.value = '';
                     headlineDescInput.value = '';
                     headlineImageInput.value = '';
                 });
-
                 podcastHeadlinesCollectionRef.orderBy("createdAt", "desc").onSnapshot(snapshot => {
                     headlinesListContainer.innerHTML = '';
                     if (snapshot.empty) { headlinesListContainer.innerHTML = '<p>No headlines added yet.</p>'; return; }
@@ -600,7 +589,6 @@
                         headlinesListContainer.appendChild(item);
                     });
                 });
-
                 const addSwitchListener = (elementId, firestoreField, currentDocRef) => {
                     const toggle = document.getElementById(elementId);
                     if (toggle) {
@@ -613,7 +601,6 @@
                         });
                     }
                 };
-
                 addSwitchListener('podcast-toggle-fixtures', 'showFixtures');
                 addSwitchListener('podcast-toggle-next-fixtures', 'showNextFixtures');
                 addSwitchListener('podcast-toggle-prediction', 'showPrediction');
@@ -622,7 +609,6 @@
                 addSwitchListener('podcast-toggle-player-profile', 'showPlayerProfile');
                 addSwitchListener('podcast-toggle-questions', 'showQuestions', podcastCurrentQuestionDocRef);
                 addSwitchListener('podcast-toggle-news', 'showNews', podcastCurrentHeadlineDocRef);
-
                 podcastVisibilityDocRef.onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
@@ -646,7 +632,6 @@
                         });
                     }
                 });
-                
                 getFixturesForYear();
                 fetchApiStatus();
                 setInterval(fetchApiStatus, 300000); 
