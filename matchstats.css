@@ -69,7 +69,8 @@ body {
 .stats-card {
     background-color: #ffffff;
     border-radius: 12px;
-    padding: 25px;
+    /* COMMENT: Padding reduced to create more internal space. */
+    padding: 20px 25px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     opacity: 0;
     transform: translateY(20px);
@@ -84,47 +85,51 @@ body {
 .card-title {
     font-size: 20px;
     font-weight: 700;
-    margin: 0 0 20px 0;
-    padding-bottom: 10px;
+    /* COMMENT: Margins and padding reduced for the title. */
+    margin: 0 0 15px 0;
+    padding-bottom: 8px;
     border-bottom: 1px solid #eee;
 }
 
-/* --- MODIFICATION: Reduced spacing and font sizes for a tighter layout --- */
+/* --- Stat Bar Styling --- */
 .stat-row {
-    margin-bottom: 12px; /* Reduced from 15px */
+    /* COMMENT: Margin between each stat row reduced significantly. */
+    margin-bottom: 8px;
 }
 .stat-row:last-child {
     margin-bottom: 0;
 }
 
 .stat-label {
-    font-size: 14px; /* Reduced from 16px */
+    /* COMMENT: Font size and margin reduced for the label. */
+    font-size: 13px;
     font-weight: 600;
     color: #555;
-    margin-bottom: 6px; /* Reduced from 8px */
+    margin-bottom: 5px;
     text-align: center;
 }
 
 .stat-values {
     display: grid;
-    grid-template-columns: 50px 1fr 50px; /* Reduced gap for values */
+    grid-template-columns: 50px 1fr 50px;
     align-items: center;
     gap: 12px;
 }
 
 .stat-value {
-    font-size: 20px; /* Reduced from 22px */
+    /* COMMENT: Font size for the numbers made slightly smaller. */
+    font-size: 18px;
     font-weight: 700;
 }
 .stat-value.home { text-align: right; }
 .stat-value.away { text-align: left; }
 
 .stat-bar {
-    height: 24px; /* Reduced from 28px */
+    /* COMMENT: Bar height slightly reduced. */
+    height: 22px;
     width: 100%;
     border-radius: 6px;
 }
-/* --- End of Modification --- */
 
 
 /* --- Possession Pie Chart Styling --- */
