@@ -19,7 +19,7 @@ body {
     flex-direction: column;
 }
 
-/* --- MODIFICATION: Styles for the new Top Bar layout --- */
+/* --- HEADER / TOP BAR --- */
 .top-bar {
     padding-bottom: 20px;
     border-bottom: 2px solid #e0e0e0;
@@ -33,7 +33,6 @@ body {
 
 .fixture-name {
     display: grid;
-    /* This new grid layout perfectly centers the score and aligns the team info */
     grid-template-columns: 1fr auto auto auto 1fr;
     align-items: center;
     gap: 20px;
@@ -90,48 +89,42 @@ body {
     border-bottom: 1px solid #eee;
 }
 
-/* --- Stat Bar Styling --- */
+/* --- MODIFICATION: Reduced spacing and font sizes for a tighter layout --- */
 .stat-row {
-    margin-bottom: 15px;
+    margin-bottom: 12px; /* Reduced from 15px */
 }
 .stat-row:last-child {
     margin-bottom: 0;
 }
 
 .stat-label {
-    font-size: 16px;
+    font-size: 14px; /* Reduced from 16px */
     font-weight: 600;
     color: #555;
-    margin-bottom: 8px;
+    margin-bottom: 6px; /* Reduced from 8px */
     text-align: center;
 }
 
 .stat-values {
     display: grid;
-    grid-template-columns: 60px 1fr 60px;
+    grid-template-columns: 50px 1fr 50px; /* Reduced gap for values */
     align-items: center;
-    gap: 15px;
+    gap: 12px;
 }
 
 .stat-value {
-    font-size: 22px;
+    font-size: 20px; /* Reduced from 22px */
     font-weight: 700;
 }
 .stat-value.home { text-align: right; }
 .stat-value.away { text-align: left; }
 
-.stat-bar-container {
-    position: relative;
-}
-
 .stat-bar {
-    height: 28px;
+    height: 24px; /* Reduced from 28px */
     width: 100%;
     border-radius: 6px;
 }
-
-/* --- MODIFICATION: The ::after pseudo-element has been removed --- */
-/* The sharp vertical line is now created by the linear-gradient in the HTML */
+/* --- End of Modification --- */
 
 
 /* --- Possession Pie Chart Styling --- */
