@@ -26,75 +26,12 @@
             
             const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
 
+            // COMMENT: Team colors remain essential for styling the bars and chart.
             const TEAM_COLORS = {
-              1595: 'rgb(85, 150, 71)',     // Seattle Sounders FC (Green)
-              1596: 'rgb(0, 102, 175)',     // San Jose Earthquakes (Blue)
-              1597: 'rgb(222, 53, 56)',     // FC Dallas (Red)
-              1598: 'rgb(101, 44, 144)',    // Orlando City SC (Purple)
-              1599: 'rgb(181, 152, 90)',    // Philadelphia Union (Gold)
-              1600: 'rgb(245, 128, 44)',    // Houston Dynamo FC (Orange)
-              1601: 'rgb(222, 53, 56)',     // Toronto FC (Red)
-              1602: 'rgb(217, 39, 46)',     // New York Red Bulls (Red)
-              1603: 'rgb(15, 49, 92)',      // Vancouver Whitecaps FC (Dark Blue)
-              1604: 'rgb(108, 169, 223)',   // New York City FC (Sky Blue)
-              1605: 'rgb(0, 40, 85)',       // LA Galaxy (Dark Blue)
-              1606: 'rgb(205, 34, 53)',     // Real Salt Lake (Red)
-              1607: 'rgb(229, 26, 55)',     // Chicago Fire FC (Red)
-              1608: 'rgb(141, 22, 44)',     // Atlanta United FC (Dark Red)
-              1609: '#021D3D',     // New England Revolution (Dark Blue)
-              1610: 'rgb(149, 29, 64)',     // Colorado Rapids (Burgundy)
-              1611: 'rgb(80, 132, 185)',    // Sporting Kansas City (Light Blue)
-              1612: 'rgb(143, 201, 232)',   // Minnesota United FC (Sky Blue)
-              1613: 'rgb(254, 222, 0)',     // Columbus Crew (Yellow)
-              1614: 'rgb(0, 85, 155)',      // CF Montréal (Blue)
-              1615: 'rgb(239, 62, 65)',      // D.C. United (Red)
-              1616: 'rgb(193, 162, 92)',     // Los Angeles FC (Gold)
-              1617: 'rgb(0, 70, 41)',        // Portland Timbers (Green)
-              2242: 'rgb(241, 91, 36)',      // FC Cincinnati (Orange)
-              9568: 'rgb(252, 185, 205)',    // Inter Miami CF (Pink)
-              9569: 'rgb(254, 219, 0)',      // Nashville SC (Yellow)
-              16489: 'rgb(0, 182, 75)',      // Austin FC (Bright Green)
-              18310: 'rgb(91, 192, 240)',    // Charlotte FC (Blue)
-              20787: 'rgb(217, 2, 79)',      // St. Louis City SC (Magenta)
-              25484: 'rgb(11, 46, 75)',      // San Diego FC (Dark Blue)
-              70: '#E32124',   // Middlesbrough (Red)
-              76: '#FFFFFF',   // Swansea City (White)
-              'default': 'rgba(66, 65, 65, 1)' 
+              1595: 'rgb(85, 150, 71)', 1596: 'rgb(0, 102, 175)', 1597: 'rgb(222, 53, 56)', 1598: 'rgb(101, 44, 144)', 1599: 'rgb(181, 152, 90)', 1600: 'rgb(245, 128, 44)', 1601: 'rgb(222, 53, 56)', 1602: 'rgb(217, 39, 46)', 1603: 'rgb(15, 49, 92)', 1604: 'rgb(108, 169, 223)', 1605: 'rgb(0, 40, 85)', 1606: 'rgb(205, 34, 53)', 1607: 'rgb(229, 26, 55)', 1608: 'rgb(141, 22, 44)', 1609: '#021D3D', 1610: 'rgb(149, 29, 64)', 1611: 'rgb(80, 132, 185)', 1612: 'rgb(143, 201, 232)', 1613: 'rgb(254, 222, 0)', 1614: 'rgb(0, 85, 155)', 1615: 'rgb(239, 62, 65)', 1616: 'rgb(193, 162, 92)', 1617: 'rgb(0, 70, 41)', 2242: 'rgb(241, 91, 36)', 9568: 'rgb(252, 185, 205)', 9569: 'rgb(254, 219, 0)', 16489: 'rgb(0, 182, 75)', 18310: 'rgb(91, 192, 240)', 20787: 'rgb(217, 2, 79)', 25484: 'rgb(11, 46, 75)', 70: '#E32124', 76: '#FFFFFF', 'default': 'rgba(66, 65, 65, 1)' 
             };
             const TEAM_COLORS_ALT = {
-              1595: '#003C71',     // Seattle Sounders FC (Sounder Blue)
-              1596: '#000000',     // San Jose Earthquakes (Black)
-              1597: '#003E7B',     // FC Dallas (Brazos Blue)
-              1598: '#FFD100',     // Orlando City SC (Gold)
-              1599: '#0A2240',     // Philadelphia Union (Union Blue)
-              1600: '#000000',     // Houston Dynamo FC (Black)
-              1601: '#231F20',     // Toronto FC (Onyx/Dark Grey)
-              1602: '#FFC700',     // New York Red Bulls (Yellow)
-              1603: '#92C1E9',     // Vancouver Whitecaps FC (Whitecaps Blue)
-              1604: '#002654',     // New York City FC (Midnight Blue)
-              1605: '#FFD200',     // LA Galaxy (Galaxy Gold)
-              1606: '#013A81',     // Real Salt Lake (Cobalt Blue)
-              1607: '#001E61',     // Chicago Fire FC (Navy Blue)
-              1608: '#A48A5A',     // Atlanta United FC (Dark Gold)
-              1609: '#E51938',     // New England Revolution (Revolution Red)
-              1610: '#569FD3',     // Colorado Rapids (Sky Blue)
-              1611: '#002F65',     // Sporting Kansas City (Dark Indigo)
-              1612: '#58595B',     // Minnesota United FC (Iron Grey)
-              1613: '#000000',     // Columbus Crew (Black)
-              1614: '#000000',     // CF Montréal (Black)
-              1615: '#000000',     // D.C. United (Black)
-              1616: '#000000',     // Los Angeles FC (Black)
-              1617: '#E1A023',     // Portland Timbers (Timbers Gold)
-              2242: '#003067',     // FC Cincinnati (FCC Blue)
-              9568: '#000000',     // Inter Miami CF (Black)
-              9569: '#001F5B',     // Nashville SC (Acoustic Blue)
-              16489: '#000000',    // Austin FC (Black)
-              18310: '#000000',    // Charlotte FC (Black)
-              20787: '#001D4C',    // St. Louis City SC (River Blue)
-              25484: '#F5831F',    // San Diego FC (Horizon Orange)
-              70: '#FFFFFF',   // Middlesbrough (White)
-              76: '#000000',   // Swansea City (Black)
-              'default': 'rgb(255, 255, 255)'
+              1595: '#003C71', 1596: '#000000', 1597: '#003E7B', 1598: '#FFD100', 1599: '#0A2240', 1600: '#000000', 1601: '#231F20', 1602: '#FFC700', 1603: '#92C1E9', 1604: '#002654', 1605: '#FFD200', 1606: '#013A81', 1607: '#001E61', 1608: '#A48A5A', 1609: '#E51938', 1610: '#569FD3', 1611: '#002F65', 1612: '#58595B', 1613: '#000000', 1614: '#000000', 1615: '#000000', 1616: '#000000', 1617: '#E1A023', 2242: '#003067', 9568: '#000000', 9569: '#001F5B', 16489: '#000000', 18310: '#000000', 20787: '#001D4C', 25484: '#F5831F', 70: '#FFFFFF', 76: '#000000', 'default': 'rgb(255, 255, 255)'
             };
 
             const statsContainer = document.getElementById('stats-container');
@@ -139,6 +76,7 @@
                 }
             });
 
+            // --- REBUILT GRAPHIC FUNCTION ---
             function buildGraphic(fixture, stats) {
                 statsContainer.innerHTML = '';
 
@@ -159,75 +97,123 @@
 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'stats-wrapper';
-
-                wrapper.innerHTML += `<div class="background-logos"><img src="${homeLogoUrl}" alt="" onerror="this.src='${fixture.teams.home.logo}'"><img src="${awayLogoUrl}" alt="" onerror="this.src='${fixture.teams.away.logo}'"></div>`;
-                const content = document.createElement('div');
-                content.className = 'stats-content';
-
-                const fixtureDate = new Date(fixture.fixture.date);
-                const formattedDate = fixtureDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-
-                content.innerHTML += `
+                
+                // --- Top Bar HTML (largely unchanged) ---
+                const topBarHTML = `
                     <div class="top-bar">
                         <img src="${leagueLogoUrl}" alt="${fixture.league.name}" class="league-logo" onerror="this.src='${fixture.league.logo}'">
                         <div class="fixture-details">
                             <div class="fixture-name">
-                                <span class="team-name home" style="color: ${homeColors.primary};">${fixture.teams.home.name}</span>
+                                <span class="team-name home">${fixture.teams.home.name}</span>
                                 <span class="scoreline">${fixture.goals.home} - ${fixture.goals.away}</span>
-                                <span class="team-name away" style="color: ${awayColors.primary};">${fixture.teams.away.name}</span>
-                            </div>
-                            <div class="fixture-meta">
-                                ${formattedDate} | ${fixture.fixture.venue.name}
-                                ${fixture.fixture.referee ? ` | Referee: ${fixture.fixture.referee}` : ''}
+                                <span class="team-name away">${fixture.teams.away.name}</span>
                             </div>
                         </div>
                     </div>
                 `;
 
-                const statsArea = document.createElement('div');
-                statsArea.className = 'stats-area';
-                
-                const statsToDisplay = ['Total Shots', 'Shots on Goal', 'Shots off Goal', 'Blocked Shots', 'Offsides', 'Ball Possession', 'Corner Kicks', 'Fouls', 'Yellow Cards', 'Red Cards', 'Total passes', 'Passes %', 'expected_goals'];
-                statsToDisplay.forEach(statName => {
+                // --- Helper function to generate a single stat row with the new split bar ---
+                const createStatRow = (statName, customLabel) => {
                     const homeStat = homeTeamStats.statistics.find(s => s.type === statName);
                     const awayStat = awayTeamStats.statistics.find(s => s.type === statName);
-                    if (!homeStat || !awayStat) return;
+                    if (!homeStat || !awayStat) return '';
 
-                    let homeValue, awayValue;
-                    if (statName === 'Ball Possession' || statName === 'Passes %') {
-                        homeValue = parseFloat(homeStat.value) || 0;
-                        awayValue = parseFloat(awayStat.value) || 0;
-                    } else {
-                        homeValue = parseInt(homeStat.value) || 0;
-                        awayValue = parseInt(awayStat.value) || 0;
-                    }
+                    let homeValue = parseFloat(homeStat.value) || 0;
+                    let awayValue = parseFloat(awayStat.value) || 0;
                     
                     const total = homeValue + awayValue;
                     const homeWidth = total > 0 ? (homeValue / total) * 100 : 50;
-                    const awayWidth = total > 0 ? (awayValue / total) * 100 : 50;
+                    
+                    // COMMENT: This creates the CSS linear-gradient for the split bar.
+                    // The gradient is angled and the color stop is based on the home team's percentage.
+                    // A tiny gap (e.g., 0.2%) is used to create a sharp line.
+                    const gradientStyle = `linear-gradient(105deg, ${homeColors.primary} ${homeWidth - 0.2}%, ${awayColors.primary} ${homeWidth + 0.2}%)`;
 
-                    statsArea.innerHTML += `
+                    return `
                         <div class="stat-row">
-                            <div class="stat-value home" style="color: ${homeColors.primary};">${homeStat.value || 0}</div>
-                            <div class="stat-bar-container home">
-                                <div class="stat-bar" style="width: ${homeWidth}%; background-color: ${homeColors.primary};"></div>
+                            <div class="stat-label">${customLabel || statName}</div>
+                            <div class="stat-values">
+                                <span class="stat-value home">${homeStat.value || 0}</span>
+                                <div class="stat-bar-container">
+                                    <div class="stat-bar" style="background: ${gradientStyle};"></div>
+                                </div>
+                                <span class="stat-value away">${awayStat.value || 0}</span>
                             </div>
-                            <div class="stat-label">${statName === 'Ball Possession' ? 'Possession' : statName === 'Offsides' ? 'Offside' : statName === 'Passes %' ? 'Passing Acc.' :  statName === 'expected_goals' ? 'Expected Goals' : statName}</div>
-                            <div class="stat-bar-container away">
-                                <div class="stat-bar" style="width: ${awayWidth}%; background-color: ${awayColors.primary};"></div>
-                            </div>
-                            <div class="stat-value away" style="color: ${awayColors.primary};">${awayStat.value || 0}</div>
                         </div>
                     `;
-                });
+                };
                 
-                content.appendChild(statsArea);
-                wrapper.appendChild(content);
+                // --- Generate HTML for the three new sections ---
+                const possessionData = homeTeamStats.statistics.find(s => s.type === 'Ball Possession');
+                const homePossession = parseFloat(possessionData.value) || 50;
+                const pieChartStyle = `conic-gradient(${homeColors.primary} 0% ${homePossession}%, ${awayColors.primary} ${homePossession}% 100%)`;
+
+                const possessionHTML = `
+                    <div class="stats-card possession-card">
+                        <h2 class="card-title">Possession</h2>
+                        <div class="possession-content">
+                             <div class="pie-chart" style="background: ${pieChartStyle};"></div>
+                             <div class="possession-values">
+                                <div class="possession-team">
+                                    <span class="team-label">${fixture.teams.home.name}</span>
+                                    <span class="team-value">${homePossession}%</span>
+                                </div>
+                                <div class="possession-team">
+                                    <span class="team-label">${fixture.teams.away.name}</span>
+                                    <span class="team-value">${100 - homePossession}%</span>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                `;
+
+                const shootingHTML = `
+                     <div class="stats-card">
+                        <h2 class="card-title">Shooting Breakdown</h2>
+                        ${createStatRow('Total Shots')}
+                        ${createStatRow('Shots on Goal', 'On Target')}
+                        ${createStatRow('Shots off Goal', 'Off Target')}
+                        ${createStatRow('Blocked Shots', 'Blocked')}
+                        ${createStatRow('expected_goals', 'xG')}
+                    </div>
+                `;
+                
+                const allStatsHTML = `
+                     <div class="stats-card">
+                        <h2 class="card-title">All Stats</h2>
+                        ${createStatRow('Corner Kicks', 'Corners')}
+                        ${createStatRow('Fouls')}
+                        ${createStatRow('Offsides')}
+                        ${createStatRow('Total passes', 'Passes')}
+                        ${createStatRow('Passes %', 'Pass Accuracy')}
+                        ${createStatRow('Yellow Cards', 'Yellows')}
+                        ${createStatRow('Red Cards', 'Reds')}
+                    </div>
+                `;
+
+                // --- Assemble the final layout ---
+                wrapper.innerHTML = `
+                    ${topBarHTML}
+                    <div class="stats-grid-layout">
+                        <div class="main-stats-col">
+                            ${allStatsHTML}
+                        </div>
+                        <div class="side-stats-col">
+                           ${possessionHTML}
+                           ${shootingHTML}
+                        </div>
+                    </div>
+                `;
+
                 statsContainer.appendChild(wrapper);
 
-                if (!statsArea.classList.contains('animate-in')) {
-                    setTimeout(() => { statsArea.classList.add('animate-in'); }, 100);
-                }
+                // Add animation class after a short delay
+                setTimeout(() => {
+                    const cards = wrapper.querySelectorAll('.stats-card');
+                    cards.forEach((card, index) => {
+                        setTimeout(() => card.classList.add('visible'), index * 100);
+                    });
+                }, 100);
             }
         });
     </script>
