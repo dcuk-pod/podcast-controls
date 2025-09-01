@@ -26,7 +26,6 @@
             
             const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
 
-            // COMMENT: Team colors remain essential for styling the bars and chart.
             const TEAM_COLORS = {
               1595: 'rgb(85, 150, 71)', 1596: 'rgb(0, 102, 175)', 1597: 'rgb(222, 53, 56)', 1598: 'rgb(101, 44, 144)', 1599: 'rgb(181, 152, 90)', 1600: 'rgb(245, 128, 44)', 1601: 'rgb(222, 53, 56)', 1602: 'rgb(217, 39, 46)', 1603: 'rgb(15, 49, 92)', 1604: 'rgb(108, 169, 223)', 1605: 'rgb(0, 40, 85)', 1606: 'rgb(205, 34, 53)', 1607: 'rgb(229, 26, 55)', 1608: 'rgb(141, 22, 44)', 1609: '#021D3D', 1610: 'rgb(149, 29, 64)', 1611: 'rgb(80, 132, 185)', 1612: 'rgb(143, 201, 232)', 1613: 'rgb(254, 222, 0)', 1614: 'rgb(0, 85, 155)', 1615: 'rgb(239, 62, 65)', 1616: 'rgb(193, 162, 92)', 1617: 'rgb(0, 70, 41)', 2242: 'rgb(241, 91, 36)', 9568: 'rgb(252, 185, 205)', 9569: 'rgb(254, 219, 0)', 16489: 'rgb(0, 182, 75)', 18310: 'rgb(91, 192, 240)', 20787: 'rgb(217, 2, 79)', 25484: 'rgb(11, 46, 75)', 70: '#E32124', 76: '#FFFFFF', 'default': 'rgba(66, 65, 65, 1)' 
             };
@@ -76,7 +75,6 @@
                 }
             });
 
-            // --- REBUILT GRAPHIC FUNCTION ---
             function buildGraphic(fixture, stats) {
                 statsContainer.innerHTML = '';
 
@@ -98,7 +96,6 @@
                 const wrapper = document.createElement('div');
                 wrapper.className = 'stats-wrapper';
                 
-                // --- Top Bar HTML (largely unchanged) ---
                 const topBarHTML = `
                     <div class="top-bar">
                         <img src="${leagueLogoUrl}" alt="${fixture.league.name}" class="league-logo" onerror="this.src='${fixture.league.logo}'">
@@ -112,7 +109,7 @@
                     </div>
                 `;
 
-                // --- Helper function to generate a single stat row with the new split bar ---
+                // --- MODIFICATION: The gradient now runs from left to right (to right) ---
                 const createStatRow = (statName, customLabel) => {
                     const homeStat = homeTeamStats.statistics.find(s => s.type === statName);
                     const awayStat = awayTeamStats.statistics.find(s => s.type === statName);
@@ -124,10 +121,7 @@
                     const total = homeValue + awayValue;
                     const homeWidth = total > 0 ? (homeValue / total) * 100 : 50;
                     
-                    // COMMENT: This creates the CSS linear-gradient for the split bar.
-                    // The gradient is angled and the color stop is based on the home team's percentage.
-                    // A tiny gap (e.g., 0.2%) is used to create a sharp line.
-                    const gradientStyle = `linear-gradient(105deg, ${homeColors.primary} ${homeWidth - 0.2}%, ${awayColors.primary} ${homeWidth + 0.2}%)`;
+                    const gradientStyle = `linear-gradient(to right, ${homeColors.primary} ${homeWidth}%, ${awayColors.primary} ${homeWidth}%)`;
 
                     return `
                         <div class="stat-row">
@@ -143,7 +137,6 @@
                     `;
                 };
                 
-                // --- Generate HTML for the three new sections ---
                 const possessionData = homeTeamStats.statistics.find(s => s.type === 'Ball Possession');
                 const homePossession = parseFloat(possessionData.value) || 50;
                 const pieChartStyle = `conic-gradient(${homeColors.primary} 0% ${homePossession}%, ${awayColors.primary} ${homePossession}% 100%)`;
@@ -178,9 +171,15 @@
                     </div>
                 `;
                 
+                // --- MODIFICATION: Added all available stats to this section ---
                 const allStatsHTML = `
                      <div class="stats-card">
                         <h2 class="card-title">All Stats</h2>
+                        ${createStatRow('Total Shots')}
+                        ${createStatRow('Shots on Goal', 'On Target')}
+                        ${createStatRow('Shots off Goal', 'Off Target')}
+                        ${createStatRow('Blocked Shots', 'Blocked')}
+                        ${createStatRow('expected_goals', 'xG')}
                         ${createStatRow('Corner Kicks', 'Corners')}
                         ${createStatRow('Fouls')}
                         ${createStatRow('Offsides')}
@@ -191,7 +190,6 @@
                     </div>
                 `;
 
-                // --- Assemble the final layout ---
                 wrapper.innerHTML = `
                     ${topBarHTML}
                     <div class="stats-grid-layout">
@@ -207,7 +205,6 @@
 
                 statsContainer.appendChild(wrapper);
 
-                // Add animation class after a short delay
                 setTimeout(() => {
                     const cards = wrapper.querySelectorAll('.stats-card');
                     cards.forEach((card, index) => {

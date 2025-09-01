@@ -52,11 +52,11 @@ body {
 .team-name.away { text-align: left; }
 .scoreline { font-size: 36px; }
 
-/* --- NEW: Main Grid Layout for the stats area --- */
+/* --- Main Grid Layout for the stats area --- */
 .stats-grid-layout {
     flex-grow: 1;
     display: grid;
-    grid-template-columns: 1.5fr 1fr; /* Main column is wider than the side column */
+    grid-template-columns: 1.5fr 1fr; 
     gap: 30px;
     overflow: hidden;
 }
@@ -67,7 +67,7 @@ body {
     gap: 30px;
 }
 
-/* --- NEW: Generic Card Styling --- */
+/* --- Generic Card Styling --- */
 .stats-card {
     background-color: #ffffff;
     border-radius: 12px;
@@ -91,7 +91,7 @@ body {
     border-bottom: 1px solid #eee;
 }
 
-/* --- NEW: Stat Bar Styling (with diagonal split) --- */
+/* --- Stat Bar Styling --- */
 .stat-row {
     margin-bottom: 15px;
 }
@@ -121,13 +121,30 @@ body {
 .stat-value.home { text-align: right; }
 .stat-value.away { text-align: left; }
 
+.stat-bar-container {
+    position: relative; /* Needed for the pseudo-element */
+}
+
 .stat-bar {
     height: 28px;
     width: 100%;
     border-radius: 6px;
 }
 
-/* --- NEW: Possession Pie Chart Styling --- */
+/* --- MODIFICATION: This pseudo-element creates the vertical split line --- */
+.stat-bar-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%; /* Position it in the middle */
+    width: 4px; /* Width of the line */
+    height: 100%;
+    background-color: #f4f6f9; /* Same as the page background for a "cutout" look */
+    /* REMOVED: The transform: skewX() is no longer needed */
+}
+
+
+/* --- Possession Pie Chart Styling --- */
 .possession-card {
     flex-grow: 1;
     display: flex;
