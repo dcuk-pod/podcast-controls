@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Combined Events Ticker</title>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <link rel="stylesheet" href="ticker_style.css">
+    <style>
+        /* Additional styles for icons and text */
+        .col-event .icon {
+            font-size: 1.2em; /* Make icons a bit bigger */
+        }
+    </style>
+</head>
+<body>
+    <div id="ticker-container-wrapper"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.appspot.com",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            const wrapper = document.getElementById('ticker-container-wrapper');
+            // NEW: Listening to a new visibility document for this specific visual
+            const visibilityDocRef = db.collection('scoreboard').doc('combinedEvents');
+            const matchEventsDataDocRef = db.collection('scoreboard').doc('matchEventsData');
+            const leagueEventsDataDocRef = db.collection('scoreboard').doc('leagueEventsData');
+
+            let allEvents = [];
+            let previouslyDisplayedIds = new Set();
+            const MAX_EVENTS_TO_SHOW = 5;
+
+            visibilityDocRef.onSnapshot((doc) => {
+                if (doc.exists && doc.data().show) {
+                    if (!document.getElementById('ticker-container')) {
+                        wrapper.innerHTML = `
+                            <div class="ticker-container" id="ticker-container">
+                                <div class="ticker-header">
+                                    <h1>Latest Events</h1>
+                                </div>
+                                <div class="events-list-viewport" id="events-list"></div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    wrapper.innerHTML = '';
+                    allEvents = []; // Clear events when hidden
+                }
+            });
+
+            // Listen for Match Events
+            matchEventsDataDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const matchEvents = doc.data().events.map(e => ({...e, source: 'match'}));
+                    updateAllEvents(matchEvents, 'match');
+                }
+            });
+
+            // Listen for League Events
+            leagueEventsDataDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const leagueEvents = doc.data().events.map(e => ({...e, source: 'league'}));
+                    updateAllEvents(leagueEvents, 'league');
+                }
+            });
+            
+            // Function to merge and update events
+            function updateAllEvents(newEvents, sourceType) {
+                // Remove old events from the same source to prevent duplicates
+                allEvents = allEvents.filter(event => event.source !== sourceType);
+                // Add the new events
+                allEvents.push(...newEvents);
+                // Re-render the ticker
+                updateTicker();
+            }
+
+            // NEW: Expanded icon function
+            function getIconForEvent(event) {
+                switch (event.type) {
+                    case 'Goal': return '⚽';
+                    case 'Card': return event.detail === 'Yellow Card' ? '🟨' : '🟥';
+                    case 'subst': return '🔄';
+                    case 'Var': return '🖥️'; // Monitor icon for VAR
+                    default: return 'ℹ️';
+                }
+            }
+
+            function getEventText(event) {
+                if (event.type === 'Goal') return 'GOAL';
+                if (event.type === 'Card') return event.detail.toUpperCase();
+                if (event.type === 'subst') return 'SUBSTITUTION';
+                if (event.type === 'Var') return `VAR: ${event.detail.toUpperCase()}`;
+                return event.type.toUpperCase();
+            }
+
+            function updateTicker() {
+                const eventsList = document.getElementById('events-list');
+                if (!eventsList) return;
+
+                // Filter out any events without a player name to keep the list clean
+                const filteredEvents = allEvents.filter(event => event.player && event.player.name);
+
+                // Sort all combined events by time, newest first
+                const sortedEvents = filteredEvents.sort((a, b) => {
+                    const timeA = a.time.extra ? a.time.elapsed + a.time.extra : a.time.elapsed;
+                    const timeB = b.time.extra ? b.time.elapsed + b.time.extra : b.time.elapsed;
+                    return timeB - timeA;
+                });
+                
+                const eventsToShow = sortedEvents.slice(0, MAX_EVENTS_TO_SHOW);
+                const newDisplayIds = new Set();
+                
+                eventsList.innerHTML = ''; // Clear the list before re-rendering
+
+                eventsToShow.forEach(event => {
+                    const eventId = `${event.fixtureInfo?.fixture.id || event.team.id}-${event.type}-${event.player.id}-${event.time.elapsed}`;
+                    newDisplayIds.add(eventId);
+
+                    const item = document.createElement('div');
+                    const isNew = !previouslyDisplayedIds.has(eventId);
+                    item.className = isNew ? 'event-item event-line new-event' : 'event-item event-line';
+
+                    const time = event.time.extra ? `${event.time.elapsed}+${event.time.extra}'` : `${event.time.elapsed}'`;
+                    const icon = getIconForEvent(event);
+                    const eventText = getEventText(event);
+
+                    let playerDetail = event.player.name;
+                    if(event.type === 'subst') {
+                        playerDetail = `${event.player.name} ◀️, ${event.assist.name} ▶️`;
+                    }
+                    
+                    const fixtureInfo = event.fixtureInfo || { teams: { home: { name: 'Home' }, away: { name: 'Away' } }, goals: { home: ' ', away: ' ' } };
+                    
+                    let teamDisplayString = `${fixtureInfo.teams.home.name} ${fixtureInfo.goals.home} - ${fixtureInfo.goals.away} ${fixtureInfo.teams.away.name}`;
+
+                    item.innerHTML = `
+                        <div class="col-time">${time}</div>
+                        <div class="col-event"><span class="icon">${icon}</span> ${eventText}</div>
+                        <div class="col-fixture">${teamDisplayString}</div>
+                        <div class="col-player"><strong>${playerDetail}</strong></div>
+                    `;
+                    
+                    eventsList.appendChild(item);
+
+                    if (isNew) {
+                         setTimeout(() => item.classList.remove('new-event'), 500);
+                    }
+                });
+
+                previouslyDisplayedIds = newDisplayIds;
+
+                if (eventsList.children.length === 0) {
+                    eventsList.innerHTML = `<div class="no-events">No recent events.</div>`;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
