@@ -650,8 +650,8 @@
                 }
                 function startPolling(fixtureId) {
                     if (statsPollingInterval) clearInterval(statsPollingInterval);
-                    statsPollingInterval = setInterval(() => pollStatsData(fixtureId), 30000);
-                    console.log(`Started polling for fixture ${fixtureId} every 30 seconds.`);
+                    statsPollingInterval = setInterval(() => pollStatsData(fixtureId), 15000);
+                    console.log(`Started polling for fixture ${fixtureId} every 15 seconds.`);
                     statusText.textContent = `Live polling enabled.`;
                 }
                 function stopPolling() {

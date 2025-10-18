@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Event Alert</title>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700,900&display=swap');
+        body { background-color: transparent; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+        .alert-wrapper {
+            position: absolute;
+            bottom: 150px; /* Position it above the bottom ticker */
+            left: 50%;
+            width: 800px;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: white;
+            border-radius: 10px;
+            border-left: 10px solid red; /* Accent color, will be changed by JS */
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            opacity: 0;
+            transform: translate(-50%, 50px); /* Start off-screen and faded out */
+            transition: all 0.5s ease-out;
+        }
+        .alert-wrapper.visible {
+            opacity: 1;
+            transform: translate(-50%, 0); /* Animate into position */
+        }
+        .event-icon { font-size: 50px; margin-right: 20px; }
+        .details { flex-grow: 1; }
+        .event-title { font-size: 32px; font-weight: 900; text-transform: uppercase; }
+        .player-name { font-size: 24px; font-weight: 700; }
+        .match-info { font-size: 16px; color: #ccc; }
+        .team-logo { width: 80px; height: 80px; }
+    </style>
+</head>
+<body>
+    <div id="alert-wrapper" class="alert-wrapper">
+        </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.appspot.com",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            const wrapper = document.getElementById('alert-wrapper');
+            const alertDocRef = db.collection('scoreboard').doc('eventAlert');
+            const assetsBaseUrl = 'https://dcuk-pod.github.io/podcast-controls/';
+
+            let currentAlertId = null;
+
+            alertDocRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const alertData = doc.data();
+                    // Only show the alert if the event ID is new
+                    if (alertData.id !== currentAlertId) {
+                        currentAlertId = alertData.id;
+                        showAlert(alertData);
+                    }
+                }
+            });
+
+            function showAlert(data) {
+                const event = data.event;
+                const fixture = data.fixture;
+                
+                const icon = event.type === 'goal' ? '⚽' : '🟥';
+                const title = event.type === 'goal' ? 'GOAL!' : 'RED CARD';
+                const accentColor = event.type === 'goal' ? '#2ecc71' : '#e74c3c';
+
+                wrapper.style.borderLeftColor = accentColor;
+                wrapper.innerHTML = `
+                    <div class="event-icon">${icon}</div>
+                    <div class="details">
+                        <div class="event-title">${title} (${event.data.player})</div>
+                        <div class="match-info">${fixture.teams.home.name} vs ${fixture.teams.away.name}</div>
+                    </div>
+                    <img src="${assetsBaseUrl}assets/logos/${event.data.teamId}.png" class="team-logo">
+                `;
+
+                // Animate the alert in
+                wrapper.classList.add('visible');
+
+                // Set a timer to automatically hide the alert after 10 seconds
+                setTimeout(() => {
+                    wrapper.classList.remove('visible');
+                }, 10000);
+            }
+        });
+    </script>
+</body>
+</html>
