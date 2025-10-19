@@ -320,6 +320,10 @@
                         }
                     }
                 }));
+                pollingToggle.addEventListener('change', () => {
+                     updateDoc(configDocRef, { "fetcher.enableLivePolling": pollingToggle.checked });
+                });
+
 
                 // --- Tab Switching Logic ---
                 document.querySelectorAll('.tab-button').forEach(tab => {
@@ -381,7 +385,6 @@
                     return card;
                 }
                 
-                // ... (createToggleCard, createScoreCard, createClockCard implementations are unchanged) ...
                 function createToggleCard(control){const card=document.createElement("div");card.className="card p-4 rounded-xl border flex flex-col justify-between",card.innerHTML=`
                         <h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2>
                         <div class="flex justify-between items-center mt-auto">
@@ -391,7 +394,9 @@
                                 <div class="switch-bg w-full h-full rounded-full transition"></div>
                                 <div class="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-6"></div>
                             </label>
-                        </div>`;const toggle=card.querySelector(`#toggle-${control.id}`);return toggle.addEventListener("change",()=>updateDoc(control.doc,{[control.field]:toggle.checked})),allUnsubscribers.push(onSnapshot(control.doc,t=>{t.exists()&&(toggle.checked=!!t.data()[control.field])})),card}function createScoreCard(){const card=document.createElement("div");card.className="card p-4 rounded-xl border",card.innerHTML=`<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Score</h2>
+                        </div>`;const toggle=card.querySelector(`#toggle-${control.id}`);return toggle.addEventListener("change",()=>updateDoc(control.doc,{[control.field]:toggle.checked})),allUnsubscribers.push(onSnapshot(control.doc,t=>{t.exists()&&(toggle.checked=!!t.data()[control.field])})),card}
+                
+                function createScoreCard(){const card=document.createElement("div");card.className="card p-4 rounded-xl border",card.innerHTML=`<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Score</h2>
                         <div class="space-y-4">
                             <div class="flex justify-between items-center">
                                 <span id="home-name-control" class="font-bold">HOME</span>
@@ -409,7 +414,9 @@
                                     <button id="away-score-up" class="btn btn-secondary px-3">+</button>
                                 </div>
                             </div>
-                        </div>`;const homeScoreDisplay=card.querySelector("#home-score-display"),awayScoreDisplay=card.querySelector("#away-score-display");return allUnsubscribers.push(onSnapshot(displayStateScoreboardDocRef,t=>{if(t.exists()&&t.data().liveState){const e=t.data().liveState;homeScoreDisplay.textContent=e.homeScore??0,awayScoreDisplay.textContent=e.awayScore??0}})),card.querySelector("#home-score-up").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.homeScore":increment(1)})),card.querySelector("#home-score-down").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.homeScore":increment(-1)})),card.querySelector("#away-score-up").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.awayScore":increment(1)})),card.querySelector("#away-score-down").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.awayScore":increment(-1)})),card}function createClockCard(){const card=document.createElement("div");card.className="card p-4 rounded-xl border",card.innerHTML=`<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Game Clock & Period</h2>
+                        </div>`;const homeScoreDisplay=card.querySelector("#home-score-display"),awayScoreDisplay=card.querySelector("#away-score-display");return allUnsubscribers.push(onSnapshot(displayStateScoreboardDocRef,t=>{if(t.exists()&&t.data().liveState){const e=t.data().liveState;homeScoreDisplay.textContent=e.homeScore??0,awayScoreDisplay.textContent=e.awayScore??0}})),card.querySelector("#home-score-up").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.homeScore":increment(1)})),card.querySelector("#home-score-down").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.homeScore":increment(-1)})),card.querySelector("#away-score-up").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.awayScore":increment(1)})),card.querySelector("#away-score-down").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.awayScore":increment(-1)})),card}
+                
+                function createClockCard(){const card=document.createElement("div");card.className="card p-4 rounded-xl border",card.innerHTML=`<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Game Clock & Period</h2>
                         <div class="flex flex-col items-center gap-4">
                             <div class="flex items-center gap-2 text-xl font-bold">
                                 <input type="number" id="minutes-input" value="0" min="0" class="w-20 p-2 text-center border rounded-lg">
@@ -495,7 +502,15 @@
                     card.querySelector('button').addEventListener('click', () => {
                         const selectedId = card.querySelector('select').value;
                         if(selectedId) {
-                            updateDoc(displayStateScoreboardDocRef, { [fieldName]: parseInt(selectedId), [control.field]: true });
+                             if (control.id === 'playerProfileSeason') {
+                                 // For season profile, we trigger the backend to fetch the specific player's season data
+                                statusText.textContent = `Triggering backend to fetch season data for player ${selectedId}...`;
+                                 updateDoc(configDocRef, { 
+                                     "fetcher.manualFetchTriggers.playerSeasonData": serverTimestamp(),
+                                     "fetcher.targetPlayerId_Season": parseInt(selectedId) // Tell the fetcher WHICH player to get
+                                 });
+                             }
+                            updateDoc(displayStateScoreboardDocRef, { [fieldName]: parseInt(selectedId), showPlayerProfile: control.id === 'playerProfile', showPlayerSeason: control.id === 'playerProfileSeason' });
                         }
                     });
 
@@ -584,16 +599,16 @@
                             }
                             
                             const playerDropdowns = [
-                                document.getElementById('event-player-select'),
-                                document.getElementById('player-off-select'),
-                                document.getElementById('player-on-select'),
-                                document.getElementById('playerProfile-select'),
-                                document.getElementById('playerProfileSeason-select'),
+                                {el: document.getElementById('event-player-select'), type: 'name'},
+                                {el: document.getElementById('player-off-select'), type: 'name'},
+                                {el: document.getElementById('player-on-select'), type: 'name'},
+                                {el: document.getElementById('playerProfile-select'), type: 'id'},
+                                {el: document.getElementById('playerProfileSeason-select'), type: 'id'},
                             ];
                             
-                            if(playerDropdowns[0] && data.lineupData) {
+                            if(playerDropdowns[0].el && data.lineupData) {
                                 const { home, away } = data.lineupData;
-                                const populate = (select) => {
+                                const populate = (select, valueType) => {
                                     if(!select) return;
                                     select.innerHTML = '';
                                     const createOptGroup = (team, type) => {
@@ -601,7 +616,7 @@
                                         group.label = team.team.name;
                                         team[type].forEach(p => {
                                             const opt = document.createElement('option');
-                                            opt.value = control.type.includes('playerProfile') ? p.player.id : p.player.name;
+                                            opt.value = valueType === 'id' ? p.player.id : p.player.name;
                                             opt.dataset.teamId = team.team.id;
                                             opt.textContent = `#${p.player.number} ${p.player.name}`;
                                             group.appendChild(opt);
@@ -617,7 +632,7 @@
                                         select.appendChild(createOptGroup(away, 'substitutes'));
                                     }
                                 };
-                                playerDropdowns.forEach(populate);
+                                playerDropdowns.forEach(item => populate(item.el, item.type));
                             }
                         }
                     });
