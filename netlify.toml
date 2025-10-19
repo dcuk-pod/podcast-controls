@@ -10,3 +10,7 @@
   # This is a cron expression that means "run this function at the start of every minute".
   # For testing, every minute is good. For production, you might change it to "*/2 * * * *" (every 2 minutes).
   schedule = "* * * * *"
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/football-api/:splat"
+  status = 200
