@@ -2,7 +2,8 @@
   "name": "podcast-controls",
   "version": "1.0.0",
   "dependencies": {
-    "node-fetch": "^3.3.2",
-    "firebase-admin": "^11.11.1" 
+    "@grpc/grpc-js": "^1.14.0",
+    "firebase-admin": "^13.5.0",
+    "node-fetch": "^3.3.2"
   }
 }
