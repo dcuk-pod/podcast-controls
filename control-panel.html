@@ -14,10 +14,10 @@
         // Using the latest modular SDK for better performance and tree-shaking
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, deleteDoc, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, deleteDoc, query, orderBy, writeBatch, increment } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
         window.firebase = {
             initializeApp, getAuth, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut,
-            getFirestore, doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, deleteDoc, query, orderBy, writeBatch
+            getFirestore, doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, deleteDoc, query, orderBy, writeBatch, increment
         };
     </script>
     
@@ -73,6 +73,7 @@
         input:checked + .switch-bg { background-color: var(--md-sys-color-success); }
         html[data-theme="dark"] .switch-bg { background-color: #555; }
         .dynamic-item { background-color: var(--md-sys-color-surface); }
+        .dynamic-list { max-height: 200px; overflow-y: auto; }
     </style>
 </head>
 <body class="antialiased transition-colors duration-300">
@@ -161,11 +162,11 @@
     <script type="module">
         const {
             initializeApp, getAuth, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut,
-            getFirestore, doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, deleteDoc, query, orderBy, writeBatch
+            getFirestore, doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, deleteDoc, query, orderBy, writeBatch, increment
         } = window.firebase;
 
         document.addEventListener('DOMContentLoaded', () => {
-            const firebaseConfig = {
+             const firebaseConfig = {
                 apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
                 authDomain: "scoreboard-control.firebaseapp.com",
                 projectId: "scoreboard-control",
@@ -248,8 +249,8 @@
                 const configDocRef = doc(db, 'config', 'global');
                 const displayStateScoreboardDocRef = doc(db, 'displayState', 'scoreboard');
                 const displayStatePodcastDocRef = doc(db, 'displayState', 'podcast');
-                const podcastQuestionsColRef = collection(db, 'podcastContent', 'questions');
-                const podcastHeadlinesColRef = collection(db, 'podcastContent', 'headlines');
+                const podcastQuestionsColRef = collection(db, 'podcastContent/questions/items');
+                const podcastHeadlinesColRef = collection(db, 'podcastContent/headlines/items');
 
                 // --- Fixture Selection Logic ---
                 getFixturesBtn.addEventListener('click', () => {
@@ -270,6 +271,10 @@
 
                 const populateFixtureSelect = (fixtures) => {
                     fixtureSelect.innerHTML = '';
+                    if (!fixtures || fixtures.length === 0) {
+                        fixtureSelect.innerHTML = '<option>No fixtures found</option>';
+                        return;
+                    }
                     const grouped = fixtures.reduce((acc, f) => {
                         (acc[f.league.name] = acc[f.league.name] || []).push(f);
                         return acc;
@@ -321,7 +326,7 @@
                 });
                 
                 // --- Dynamic Card Generation ---
-                const scoreboardControls = [
+                 const scoreboardControls = [
                     { id: 'score', title: 'Score', type: 'score' },
                     { id: 'clock', title: 'Game Clock & Period', type: 'clock' },
                     { id: 'events', title: 'Broadcast Events', type: 'events' },
@@ -359,7 +364,6 @@
                         case 'events': return createEventsCard();
                         case 'questions': return createPodcastContentCard(control);
                         case 'headlines': return createPodcastContentCard(control);
-                        // Add other card types here
                         default: 
                             const emptyCard = document.createElement('div');
                             emptyCard.className = 'card p-4 rounded-xl border';
@@ -367,7 +371,7 @@
                             return emptyCard;
                     }
                 }
-
+                
                 function createToggleCard(control) {
                     const card = document.createElement('div');
                     card.className = 'card p-4 rounded-xl border flex flex-col justify-between';
@@ -380,8 +384,7 @@
                                 <div class="switch-bg w-full h-full rounded-full transition"></div>
                                 <div class="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-6"></div>
                             </label>
-                        </div>
-                    `;
+                        </div>`;
                     const toggle = card.querySelector(`#toggle-${control.id}`);
                     toggle.addEventListener('change', () => updateDoc(control.doc, { [control.field]: toggle.checked }));
                     allUnsubscribers.push(onSnapshot(control.doc, (doc) => {
@@ -391,7 +394,6 @@
                 }
 
                 function createScoreCard() {
-                    // This function now creates the Score card HTML and logic
                     const card = document.createElement('div');
                     card.className = 'card p-4 rounded-xl border';
                     card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Score</h2>
@@ -414,25 +416,21 @@
                             </div>
                         </div>`;
 
-                    const homeName = card.querySelector('#home-name-control');
-                    const awayName = card.querySelector('#away-name-control');
                     const homeScoreDisplay = card.querySelector('#home-score-display');
                     const awayScoreDisplay = card.querySelector('#away-score-display');
                     
-                    let currentLiveState = {};
-
                     allUnsubscribers.push(onSnapshot(displayStateScoreboardDocRef, (doc) => {
                         if (doc.exists() && doc.data().liveState) {
-                            currentLiveState = doc.data().liveState;
-                            homeScoreDisplay.textContent = currentLiveState.homeScore || 0;
-                            awayScoreDisplay.textContent = currentLiveState.awayScore || 0;
+                            const liveState = doc.data().liveState;
+                            homeScoreDisplay.textContent = liveState.homeScore ?? 0;
+                            awayScoreDisplay.textContent = liveState.awayScore ?? 0;
                         }
                     }));
                     
-                    card.querySelector('#home-score-up').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.homeScore': (currentLiveState.homeScore || 0) + 1 }));
-                    card.querySelector('#home-score-down').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.homeScore': Math.max(0, (currentLiveState.homeScore || 0) - 1) }));
-                    card.querySelector('#away-score-up').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.awayScore': (currentLiveState.awayScore || 0) + 1 }));
-                    card.querySelector('#away-score-down').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.awayScore': Math.max(0, (currentLiveState.awayScore || 0) - 1) }));
+                    card.querySelector('#home-score-up').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.homeScore': increment(1) }));
+                    card.querySelector('#home-score-down').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.homeScore': increment(-1) }));
+                    card.querySelector('#away-score-up').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.awayScore': increment(1) }));
+                    card.querySelector('#away-score-down').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.awayScore': increment(-1) }));
 
                     return card;
                 }
@@ -453,7 +451,7 @@
                                 <button id="reset-time-btn" class="btn btn-secondary">Reset</button>
                             </div>
                             <div class="grid grid-cols-4 gap-2 w-full">
-                                ${['1H:0', 'HT:45', '2H:45', 'FT:90', 'ET1:90', 'ET2:105', 'PENS:120'].map(p => {
+                                ${['1H:0', 'HT:45', '2H:45', 'FT:90', 'ET1:90', 'ET2:105', 'PENS:120', 'Abd:0'].map(p => {
                                     const [period, time] = p.split(':');
                                     return `<button class="period-btn btn btn-secondary" data-period="${period}" data-time="${time}">${period}</button>`
                                 }).join('')}
@@ -488,10 +486,7 @@
                             timerInterval = setInterval(() => {
                                 let seconds = (currentLiveState.seconds || 0) + 1;
                                 let minutes = currentLiveState.minutes || 0;
-                                if (seconds >= 60) {
-                                    seconds = 0;
-                                    minutes++;
-                                }
+                                if (seconds >= 60) { seconds = 0; minutes++; }
                                 updateDoc(displayStateScoreboardDocRef, { 'liveState.minutes': minutes, 'liveState.seconds': seconds });
                             }, 1000);
                         }
@@ -499,11 +494,7 @@
 
                     card.querySelectorAll('.period-btn').forEach(btn => {
                         btn.addEventListener('click', () => {
-                            if (timerInterval) {
-                                clearInterval(timerInterval);
-                                timerInterval = null;
-                                playPauseBtn.textContent = 'Play';
-                            }
+                            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; playPauseBtn.textContent = 'Play'; }
                             updateDoc(displayStateScoreboardDocRef, { 
                                 'liveState.period': btn.dataset.period,
                                 'liveState.minutes': parseInt(btn.dataset.time),
@@ -511,29 +502,158 @@
                             });
                         });
                     });
+                    
+                    card.querySelector('#reset-time-btn').addEventListener('click', () => {
+                        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; playPauseBtn.textContent = 'Play'; }
+                        updateDoc(displayStateScoreboardDocRef, { 'liveState.minutes': 0, 'liveState.seconds': 0 });
+                    });
 
                     return card;
                 }
 
                 function createEventsCard() {
-                     // TODO: Build and return the Broadcast Events card
-                     return document.createElement('div');
+                    const card = document.createElement('div');
+                    card.className = 'card p-4 rounded-xl border';
+                    card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Broadcast Events</h2>
+                        <div class="space-y-4">
+                            <select id="event-type-select" class="w-full p-2 border rounded-lg">
+                                <option value="goal">Goal</option>
+                                <option value="yellow">Yellow Card</option>
+                                <option value="red">Red Card</option>
+                                <option value="sub">Substitution</option>
+                                <option value="var_goal">VAR: Goal Check</option>
+                                <!-- Add other VAR options -->
+                            </select>
+                            <div id="single-player-section">
+                                <select id="event-player-select" class="w-full p-2 border rounded-lg"><option>(Load fixture first)</option></select>
+                            </div>
+                            <div id="sub-player-section" class="hidden grid grid-cols-2 gap-2">
+                                <select id="player-off-select"><option>Player Off...</option></select>
+                                <select id="player-on-select"><option>Player On...</option></select>
+                            </div>
+                             <button id="trigger-event-btn" class="btn btn-primary w-full py-2">Trigger Event</button>
+                        </div>`;
+                    
+                    const eventTypeSelect = card.querySelector('#event-type-select');
+                    const singlePlayerSection = card.querySelector('#single-player-section');
+                    const subPlayerSection = card.querySelector('#sub-player-section');
+
+                    eventTypeSelect.addEventListener('change', () => {
+                        const isSub = eventTypeSelect.value === 'sub';
+                        singlePlayerSection.classList.toggle('hidden', isSub);
+                        subPlayerSection.classList.toggle('hidden', !isSub);
+                    });
+
+                    card.querySelector('#trigger-event-btn').addEventListener('click', () => {
+                        const type = eventTypeSelect.value;
+                        let eventData = {};
+                        if (type === 'sub') {
+                            const playerOn = card.querySelector('#player-on-select').value;
+                            const playerOff = card.querySelector('#player-off-select').value;
+                            if (!playerOn || !playerOff) return;
+                            eventData = { playerOn, playerOff, teamId: card.querySelector('#player-on-select').options[card.querySelector('#player-on-select').selectedIndex].dataset.teamId };
+                        } else {
+                            const player = card.querySelector('#event-player-select').value;
+                            if (!player) return;
+                             eventData = { player, teamId: card.querySelector('#event-player-select').options[card.querySelector('#event-player-select').selectedIndex].dataset.teamId };
+                        }
+                        updateDoc(displayStateScoreboardDocRef, { currentBroadcastEvent: { type, data: eventData, id: Date.now() } });
+                    });
+                    
+                    return card;
                 }
 
                 function createPodcastContentCard(control) {
-                     // TODO: Build and return the Podcast Questions/Headlines card
-                     return document.createElement('div');
+                    const isQuestions = control.id === 'questions';
+                    const colRef = isQuestions ? podcastQuestionsColRef : podcastHeadlinesColRef;
+                    const card = document.createElement('div');
+                    card.className = 'card p-4 rounded-xl border';
+                    card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2>
+                        <div class="dynamic-form space-y-2">
+                            <input type="text" id="${control.id}-input-1" placeholder="${isQuestions ? 'Enter question...' : 'Enter title...'}">
+                            <textarea id="${control.id}-input-2" placeholder="${isQuestions ? 'Enter name...' : 'Enter description...'}" rows="2"></textarea>
+                            ${isQuestions ? 
+                                `<select id="${control.id}-input-3"><option value="twitter">Twitter</option><option value="facebook">Facebook</option><option value="discord">Discord</option></select>` : 
+                                `<input type="text" id="${control.id}-input-3" placeholder="image.png">`
+                            }
+                            <button id="add-${control.id}-btn" class="btn btn-primary w-full">Add</button>
+                        </div>
+                        <div id="${control.id}-list-container" class="dynamic-list mt-4 space-y-2"></div>`;
+
+                    const inputs = [card.querySelector(`#${control.id}-input-1`), card.querySelector(`#${control.id}-input-2`), card.querySelector(`#${control.id}-input-3`)];
+                    const listContainer = card.querySelector(`#${control.id}-list-container`);
+                    
+                    card.querySelector(`#add-${control.id}-btn`).addEventListener('click', () => {
+                        const [val1, val2, val3] = inputs.map(i => i.value.trim());
+                        if (!val1 || !val2) return;
+                        const data = isQuestions ? { text: val1, name: val2, source: val3, createdAt: serverTimestamp() } : { title: val1, description: val2, image: val3, createdAt: serverTimestamp() };
+                        addDoc(colRef, data);
+                        inputs.forEach(i => i.value = '');
+                    });
+
+                    allUnsubscribers.push(onSnapshot(query(colRef, orderBy('createdAt', 'desc')), (snapshot) => {
+                        listContainer.innerHTML = '';
+                        snapshot.forEach(doc => {
+                            const item = doc.data();
+                            const itemEl = document.createElement('div');
+                            itemEl.className = 'dynamic-item p-2 rounded-lg flex justify-between items-center';
+                            itemEl.innerHTML = `<span class="text-sm flex-grow pr-2">${isQuestions ? item.text : item.title}</span>
+                                <div class="flex-shrink-0 flex gap-1">
+                                    <button class="show-btn btn btn-secondary text-xs px-2 py-1">Show</button>
+                                    <button class="remove-btn btn btn-danger text-xs px-2 py-1">X</button>
+                                </div>`;
+                            itemEl.querySelector('.show-btn').addEventListener('click', () => updateDoc(displayStatePodcastDocRef, isQuestions ? { currentQuestionId: doc.id } : { currentHeadlineId: doc.id }));
+                            itemEl.querySelector('.remove-btn').addEventListener('click', () => deleteDoc(doc.ref));
+                            listContainer.appendChild(itemEl);
+                        });
+                    }));
+                    return card;
                 }
 
                 function initializeInteractiveCards(fixtureId) {
                     console.log(`Initializing interactive cards for fixture ID: ${fixtureId}`);
-                    // This is where we'll listen to the live data to populate dropdowns
                     const liveDataDocRef = doc(db, 'liveData', String(fixtureId));
                     const unsub = onSnapshot(liveDataDocRef, (doc) => {
                         if (doc.exists()) {
                             const data = doc.data();
-                            // Example: Populate player dropdowns for the events card
-                            // populatePlayerSelects(data.lineupData);
+                            // Populate home/away names on score card
+                            const homeName = document.getElementById('home-name-control');
+                            const awayName = document.getElementById('away-name-control');
+                            if (homeName && data.fixtureDetails) {
+                                homeName.textContent = data.fixtureDetails.teams.home.name;
+                                awayName.textContent = data.fixtureDetails.teams.away.name;
+                            }
+                            // Populate player dropdowns
+                            const eventPlayerSelect = document.getElementById('event-player-select');
+                            const playerOffSelect = document.getElementById('player-off-select');
+                            const playerOnSelect = document.getElementById('player-on-select');
+                            if(eventPlayerSelect && data.lineupData) {
+                                const { home, away } = data.lineupData;
+                                eventPlayerSelect.innerHTML = playerOffSelect.innerHTML = playerOnSelect.innerHTML = ''; // Clear
+                                const populate = (select) => {
+                                    const createOptGroup = (team, type) => {
+                                        const group = document.createElement('optgroup');
+                                        group.label = team.team.name;
+                                        team[type].forEach(p => {
+                                            const opt = document.createElement('option');
+                                            opt.value = p.player.name;
+                                            opt.dataset.teamId = team.team.id;
+                                            opt.textContent = `#${p.player.number} ${p.player.name}`;
+                                            group.appendChild(opt);
+                                        });
+                                        return group;
+                                    };
+                                    if(home) {
+                                        select.appendChild(createOptGroup(home, 'startXI'));
+                                        select.appendChild(createOptGroup(home, 'substitutes'));
+                                    }
+                                    if(away) {
+                                        select.appendChild(createOptGroup(away, 'startXI'));
+                                        select.appendChild(createOptGroup(away, 'substitutes'));
+                                    }
+                                }
+                                [eventPlayerSelect, playerOffSelect, playerOnSelect].forEach(populate);
+                            }
                         }
                     });
                     allUnsubscribers.push(unsub);
