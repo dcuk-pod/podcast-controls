@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DCUK Visuals Control Panel</title>
+
+    <!-- PWA & Themeing -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" id="theme-color-meta" content="#3498db">
+
+    <!-- Firebase -->
+    <script type="module">
+        // Using the latest modular SDK for better performance and tree-shaking
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, deleteDoc, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        window.firebase = {
+            initializeApp, getAuth, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut,
+            getFirestore, doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, deleteDoc, query, orderBy, writeBatch
+        };
+    </script>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles to complement Tailwind */
+        :root {
+            --md-sys-color-primary: #3498db;
+            --md-sys-color-primary-container: #2980b9;
+            --md-sys-color-on-primary: #ffffff;
+            --md-sys-color-surface: #f0f2f5;
+            --md-sys-color-surface-container-high: #ffffff;
+            --md-sys-color-on-surface: #333333;
+            --md-sys-color-on-surface-variant: #555555;
+            --md-sys-color-outline: #e0e0e0;
+            --md-sys-color-outline-variant: #eeeeee;
+            --md-sys-color-error: #e74c3c;
+            --md-sys-color-error-container: #c0392b;
+            --md-sys-color-success: #2ecc71;
+            --md-sys-color-tertiary-container: #e9ecef;
+        }
+        html[data-theme="dark"] {
+            --md-sys-color-primary: #3498db;
+            --md-sys-color-primary-container: #4aa9e4;
+            --md-sys-color-surface: #121212;
+            --md-sys-color-surface-container-high: #1e1e1e;
+            --md-sys-color-on-surface: #e0e0e0;
+            --md-sys-color-on-surface-variant: #bbbbbb;
+            --md-sys-color-outline: #3a3a3a;
+            --md-sys-color-outline-variant: #2c2c2c;
+            --md-sys-color-error: #e74c3c;
+            --md-sys-color-error-container: #f06a5a;
+            --md-sys-color-success: #2ecc71;
+            --md-sys-color-tertiary-container: #2c2c2c;
+        }
+        body { background-color: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); font-family: 'Poppins', sans-serif; }
+        .card { background-color: var(--md-sys-color-surface-container-high); border-color: var(--md-sys-color-outline); }
+        .card-title { border-color: var(--md-sys-color-outline-variant); }
+        .tab-button[aria-selected="true"] { border-color: var(--md-sys-color-primary); color: var(--md-sys-color-primary); }
+        .tab-button { color: var(--md-sys-color-on-surface-variant); }
+        .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 700; transition: background-color 0.2s; }
+        .btn-primary { background-color: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+        .btn-primary:hover { background-color: var(--md-sys-color-primary-container); }
+        .btn-danger { background-color: var(--md-sys-color-error); color: var(--md-sys-color-on-primary); }
+        .btn-danger:hover { background-color: var(--md-sys-color-error-container); }
+        .btn-secondary { background-color: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-surface); }
+        .api-bar { background-color: var(--md-sys-color-tertiary-container); }
+        input, select, textarea { background-color: var(--md-sys-color-surface); border-color: var(--md-sys-color-outline); color: var(--md-sys-color-on-surface); }
+        .switch-bg { background-color: #ccc; }
+        input:checked + .switch-bg { background-color: var(--md-sys-color-success); }
+        html[data-theme="dark"] .switch-bg { background-color: #555; }
+        .dynamic-item { background-color: var(--md-sys-color-surface); }
+    </style>
+</head>
+<body class="antialiased transition-colors duration-300">
+
+    <!-- Login Screen -->
+    <div id="login-container" class="min-h-screen flex items-center justify-center p-4">
+        <div class="card w-full max-w-md p-8 rounded-2xl shadow-lg border">
+            <h1 class="text-3xl font-bold text-center mb-6">DCUK Control Panel</h1>
+            <form id="login-form" class="space-y-4">
+                <input type="email" id="login-email" placeholder="Email" required class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="login-password" placeholder="Password" required class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button type="submit" class="btn btn-primary w-full py-3 text-lg">Login</button>
+                <p id="login-error" class="text-red-500 text-center font-bold mt-4 hidden"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="hidden p-4 md:p-8 max-w-7xl mx-auto">
+        <div class="card p-6 rounded-2xl shadow-lg border">
+            <!-- Header -->
+            <header class="flex flex-wrap justify-between items-center pb-4 mb-6 border-b card-title">
+                <h1 class="text-2xl font-bold">DCUK Visuals Control Panel</h1>
+                <div class="flex items-center space-x-4 mt-4 sm:mt-0">
+                    <div class="flex items-center space-x-2">
+                        <span>☀️</span>
+                        <label for="theme-toggle" class="relative inline-block w-12 h-6 cursor-pointer">
+                            <input type="checkbox" id="theme-toggle" class="sr-only peer">
+                            <div class="switch-bg w-full h-full rounded-full peer-checked:bg-green-500 transition"></div>
+                            <div class="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-6"></div>
+                        </label>
+                        <span>🌙</span>
+                    </div>
+                    <button id="logout-btn" class="btn btn-danger">Logout</button>
+                </div>
+            </header>
+
+            <!-- API Status Bar -->
+            <div class="api-bar text-sm grid grid-cols-1 sm:grid-cols-3 gap-2 items-center p-3 rounded-lg mb-6">
+                <div class="session-calls text-center sm:text-left">Session API Calls: <span id="session-api-calls" class="font-bold">0</span></div>
+                <div class="flex justify-center items-center space-x-2">
+                    <span class="font-bold">Live Polling</span>
+                    <label for="polling-toggle" class="relative inline-block w-12 h-6 cursor-pointer">
+                        <input type="checkbox" id="polling-toggle" class="sr-only peer">
+                        <div class="switch-bg w-full h-full rounded-full peer-checked:bg-green-500 transition"></div>
+                        <div class="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-6"></div>
+                    </label>
+                </div>
+                <div class="daily-calls text-center sm:text-right">Daily API Calls: <span id="daily-api-calls" class="font-bold">Loading...</span></div>
+            </div>
+
+            <!-- Fixture Selection -->
+            <div class="card p-4 rounded-xl border mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                    <select id="year-select" class="p-3 border rounded-lg w-full">
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                    </select>
+                    <button id="get-fixtures-btn" class="btn btn-primary py-3">Get Fixtures</button>
+                    <select id="fixture-select" class="p-3 border rounded-lg w-full sm:col-span-2">
+                        <option>Select a year first...</option>
+                    </select>
+                    <button id="load-fixture-btn" class="btn btn-primary py-3">Load Selected Fixture</button>
+                </div>
+                <p id="status-text" class="text-center mt-3 text-sm">Select a season and get fixtures to begin.</p>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <div class="border-b card-title mb-6">
+                <nav class="flex -mb-px space-x-6" aria-label="Tabs">
+                    <button class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg" aria-selected="true" data-tab="scoreboard">Scoreboard</button>
+                    <button class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg" aria-selected="false" data-tab="podcast">Podcast</button>
+                </nav>
+            </div>
+
+            <!-- Tab Panels -->
+            <div id="tab-panels">
+                <div id="tab-panel-scoreboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                <div id="tab-panel-podcast" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        const {
+            initializeApp, getAuth, setPersistence, browserSessionPersistence, signInWithEmailAndPassword, onAuthStateChanged, signOut,
+            getFirestore, doc, onSnapshot, setDoc, updateDoc, collection, addDoc, serverTimestamp, deleteDoc, query, orderBy, writeBatch
+        } = window.firebase;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCFDYDSsOswmf2xn8-Z6LNw4Qu-kiph2X4",
+                authDomain: "scoreboard-control.firebaseapp.com",
+                projectId: "scoreboard-control",
+                storageBucket: "scoreboard-control.appspot.com",
+                messagingSenderId: "438021450087",
+                appId: "1:438021450087:web:cb4eb72e0858b4b2f627c2"
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+
+            // --- App Initialization and Authentication ---
+            const loginContainer = document.getElementById('login-container');
+            const appContainer = document.getElementById('app-container');
+            const loginForm = document.getElementById('login-form');
+            const loginEmail = document.getElementById('login-email');
+            const loginPassword = document.getElementById('login-password');
+            const loginError = document.getElementById('login-error');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            let unsubscribeAllListeners = () => {};
+
+            onAuthStateChanged(auth, user => {
+                if (user) {
+                    loginContainer.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                    loginError.classList.add('hidden');
+                    unsubscribeAllListeners = initializeAppLogic();
+                } else {
+                    loginContainer.classList.remove('hidden');
+                    appContainer.classList.add('hidden');
+                    unsubscribeAllListeners(); 
+                    unsubscribeAllListeners = () => {};
+                }
+            });
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                setPersistence(auth, browserSessionPersistence)
+                    .then(() => signInWithEmailAndPassword(auth, loginEmail.value, loginPassword.value))
+                    .catch(error => {
+                        console.error('Login Error:', error);
+                        loginError.textContent = 'Error: Invalid email or password.';
+                        loginError.classList.remove('hidden');
+                    });
+            });
+
+            logoutBtn.addEventListener('click', () => signOut(auth));
+            
+            // --- Theme Switcher Logic ---
+            const themeToggle = document.getElementById('theme-toggle');
+            const applyTheme = (theme) => {
+                document.documentElement.setAttribute('data-theme', theme);
+                themeToggle.checked = theme === 'dark';
+            };
+            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            applyTheme(savedTheme);
+            themeToggle.addEventListener('change', () => {
+                const newTheme = themeToggle.checked ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+
+            // --- Main Application Logic ---
+            function initializeAppLogic() {
+                console.log("Initializing App Logic...");
+                let allUnsubscribers = [];
+                const DC_UNITED_TEAM_ID = 1615;
+                let currentFixtureId = null;
+
+                // --- Element & Firestore References ---
+                const statusText = document.getElementById('status-text');
+                const yearSelect = document.getElementById('year-select');
+                const getFixturesBtn = document.getElementById('get-fixtures-btn');
+                const fixtureSelect = document.getElementById('fixture-select');
+                const loadFixtureBtn = document.getElementById('load-fixture-btn');
+                const pollingToggle = document.getElementById('polling-toggle');
+                const dailyApiCallsSpan = document.getElementById('daily-api-calls');
+                const configDocRef = doc(db, 'config', 'global');
+                const displayStateScoreboardDocRef = doc(db, 'displayState', 'scoreboard');
+                const displayStatePodcastDocRef = doc(db, 'displayState', 'podcast');
+                const podcastQuestionsColRef = collection(db, 'podcastContent', 'questions');
+                const podcastHeadlinesColRef = collection(db, 'podcastContent', 'headlines');
+
+                // --- Fixture Selection Logic ---
+                getFixturesBtn.addEventListener('click', () => {
+                    const year = yearSelect.value;
+                    statusText.textContent = `Loading fixtures for ${year}...`;
+                    const fixturesDocRef = doc(db, 'fixtures', `${DC_UNITED_TEAM_ID}_${year}`);
+                    const unsub = onSnapshot(fixturesDocRef, (doc) => {
+                        if (doc.exists() && doc.data().fixtures) {
+                            populateFixtureSelect(doc.data().fixtures);
+                            statusText.textContent = `Fixtures for ${year} loaded from database.`;
+                        } else {
+                            statusText.textContent = `No local data. Triggering backend to fetch fixtures...`;
+                            updateDoc(configDocRef, { "fetcher.manualFetchTriggers.fixtures": serverTimestamp() });
+                        }
+                    }, () => updateDoc(configDocRef, { "fetcher.manualFetchTriggers.fixtures": serverTimestamp() }));
+                    allUnsubscribers.push(unsub);
+                });
+
+                const populateFixtureSelect = (fixtures) => {
+                    fixtureSelect.innerHTML = '';
+                    const grouped = fixtures.reduce((acc, f) => {
+                        (acc[f.league.name] = acc[f.league.name] || []).push(f);
+                        return acc;
+                    }, {});
+                    Object.keys(grouped).sort().forEach(group => {
+                        const optgroup = document.createElement('optgroup');
+                        optgroup.label = group;
+                        grouped[group].forEach(f => {
+                            const option = document.createElement('option');
+                            option.value = f.fixture.id;
+                            option.textContent = `${f.teams.home.name} vs ${f.teams.away.name} (${new Date(f.fixture.date).toLocaleDateString()})`;
+                            optgroup.appendChild(option);
+                        });
+                        fixtureSelect.appendChild(optgroup);
+                    });
+                };
+
+                loadFixtureBtn.addEventListener('click', () => {
+                    const fixtureId = parseInt(fixtureSelect.value);
+                    if (!fixtureId) { statusText.textContent = "Please select a fixture."; return; }
+                    statusText.textContent = `Setting active fixture to ${fixtureId} and triggering live data fetch...`;
+                    updateDoc(configDocRef, {
+                        selectedFixtureId: fixtureId,
+                        "fetcher.manualFetchTriggers.liveData": serverTimestamp()
+                    });
+                });
+
+                // --- Global Config Listener ---
+                allUnsubscribers.push(onSnapshot(configDocRef, (doc) => {
+                    if (doc.exists()) {
+                        const config = doc.data();
+                        pollingToggle.checked = config.fetcher?.enableLivePolling || false;
+                        dailyApiCallsSpan.textContent = `${config.apiStatus?.current || 0} / ${config.apiStatus?.limit_day || 'N/A'}`;
+                        if(config.selectedFixtureId && config.selectedFixtureId !== currentFixtureId) {
+                            currentFixtureId = config.selectedFixtureId;
+                            initializeInteractiveCards(currentFixtureId);
+                        }
+                    }
+                }));
+
+                // --- Tab Switching Logic ---
+                document.querySelectorAll('.tab-button').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        document.querySelectorAll('.tab-button').forEach(t => t.setAttribute('aria-selected', 'false'));
+                        tab.setAttribute('aria-selected', 'true');
+                        document.querySelectorAll('[id^="tab-panel-"]').forEach(p => p.classList.add('hidden'));
+                        document.getElementById(`tab-panel-${tab.dataset.tab}`).classList.remove('hidden');
+                    });
+                });
+                
+                // --- Dynamic Card Generation ---
+                const scoreboardControls = [
+                    { id: 'score', title: 'Score', type: 'score' },
+                    { id: 'clock', title: 'Game Clock & Period', type: 'clock' },
+                    { id: 'events', title: 'Broadcast Events', type: 'events' },
+                    { id: 'scoreboard', title: 'Scoreboard Visibility', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showScoreboard' },
+                    { id: 'playerProfile', title: 'Player Profile (Match)', type: 'playerProfile' },
+                    { id: 'playerStats', title: 'Player Stats', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showPlayerStats' },
+                    { id: 'combinedLineup', title: 'Combined Lineup', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showLineup' },
+                    { id: 'matchStats', title: 'Match Stats', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showMatchStats' },
+                    { id: 'scroller', title: 'Scroller', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showScroller' },
+                    { id: 'combinedEvents', title: 'Combined Events', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showCombinedEvents' },
+                    { id: 'playerSeason', title: 'Player Profile (Season)', type: 'playerProfileSeason' },
+                    { id: 'prediction', title: 'Prediction Graphic', type: 'prediction' },
+                ];
+
+                const podcastControls = [
+                    { id: 'questions', title: 'Podcast Questions', type: 'questions' },
+                    { id: 'headlines', title: 'News Headlines', type: 'headlines' },
+                    { id: 'podcastFixtures', title: 'Fixtures Visual', type: 'toggle', doc: displayStatePodcastDocRef, field: 'showFixtures' },
+                    { id: 'nextFixtures', title: 'Next Fixtures Visual', type: 'toggle', doc: displayStatePodcastDocRef, field: 'showNextFixtures' },
+                ];
+                
+                const scoreboardPanel = document.getElementById('tab-panel-scoreboard');
+                const podcastPanel = document.getElementById('tab-panel-podcast');
+                scoreboardPanel.innerHTML = '';
+                podcastPanel.innerHTML = '';
+
+                scoreboardControls.forEach(control => scoreboardPanel.appendChild(createCard(control)));
+                podcastControls.forEach(control => podcastPanel.appendChild(createCard(control)));
+
+                function createCard(control) {
+                    switch (control.type) {
+                        case 'toggle': return createToggleCard(control);
+                        case 'score': return createScoreCard();
+                        case 'clock': return createClockCard();
+                        case 'events': return createEventsCard();
+                        case 'questions': return createPodcastContentCard(control);
+                        case 'headlines': return createPodcastContentCard(control);
+                        // Add other card types here
+                        default: 
+                            const emptyCard = document.createElement('div');
+                            emptyCard.className = 'card p-4 rounded-xl border';
+                            emptyCard.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2><p class="text-sm text-gray-500">Controls coming soon.</p>`;
+                            return emptyCard;
+                    }
+                }
+
+                function createToggleCard(control) {
+                    const card = document.createElement('div');
+                    card.className = 'card p-4 rounded-xl border flex flex-col justify-between';
+                    card.innerHTML = `
+                        <h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2>
+                        <div class="flex justify-between items-center mt-auto">
+                            <span class="font-bold">Show Visual</span>
+                            <label class="relative inline-block w-12 h-6 cursor-pointer">
+                                <input type="checkbox" id="toggle-${control.id}" class="sr-only peer">
+                                <div class="switch-bg w-full h-full rounded-full transition"></div>
+                                <div class="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-6"></div>
+                            </label>
+                        </div>
+                    `;
+                    const toggle = card.querySelector(`#toggle-${control.id}`);
+                    toggle.addEventListener('change', () => updateDoc(control.doc, { [control.field]: toggle.checked }));
+                    allUnsubscribers.push(onSnapshot(control.doc, (doc) => {
+                        if (doc.exists()) toggle.checked = !!doc.data()[control.field];
+                    }));
+                    return card;
+                }
+
+                function createScoreCard() {
+                    // This function now creates the Score card HTML and logic
+                    const card = document.createElement('div');
+                    card.className = 'card p-4 rounded-xl border';
+                    card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Score</h2>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span id="home-name-control" class="font-bold">HOME</span>
+                                <div class="flex items-center space-x-2">
+                                    <button id="home-score-down" class="btn btn-secondary px-3">-</button>
+                                    <span id="home-score-display" class="text-xl font-bold w-8 text-center">0</span>
+                                    <button id="home-score-up" class="btn btn-secondary px-3">+</button>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span id="away-name-control" class="font-bold">AWAY</span>
+                                <div class="flex items-center space-x-2">
+                                    <button id="away-score-down" class="btn btn-secondary px-3">-</button>
+                                    <span id="away-score-display" class="text-xl font-bold w-8 text-center">0</span>
+                                    <button id="away-score-up" class="btn btn-secondary px-3">+</button>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    const homeName = card.querySelector('#home-name-control');
+                    const awayName = card.querySelector('#away-name-control');
+                    const homeScoreDisplay = card.querySelector('#home-score-display');
+                    const awayScoreDisplay = card.querySelector('#away-score-display');
+                    
+                    let currentLiveState = {};
+
+                    allUnsubscribers.push(onSnapshot(displayStateScoreboardDocRef, (doc) => {
+                        if (doc.exists() && doc.data().liveState) {
+                            currentLiveState = doc.data().liveState;
+                            homeScoreDisplay.textContent = currentLiveState.homeScore || 0;
+                            awayScoreDisplay.textContent = currentLiveState.awayScore || 0;
+                        }
+                    }));
+                    
+                    card.querySelector('#home-score-up').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.homeScore': (currentLiveState.homeScore || 0) + 1 }));
+                    card.querySelector('#home-score-down').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.homeScore': Math.max(0, (currentLiveState.homeScore || 0) - 1) }));
+                    card.querySelector('#away-score-up').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.awayScore': (currentLiveState.awayScore || 0) + 1 }));
+                    card.querySelector('#away-score-down').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.awayScore': Math.max(0, (currentLiveState.awayScore || 0) - 1) }));
+
+                    return card;
+                }
+                
+                function createClockCard() {
+                    const card = document.createElement('div');
+                    card.className = 'card p-4 rounded-xl border';
+                    card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Game Clock & Period</h2>
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="flex items-center gap-2 text-xl font-bold">
+                                <input type="number" id="minutes-input" value="0" min="0" class="w-20 p-2 text-center border rounded-lg">
+                                <span>:</span>
+                                <input type="number" id="seconds-input" value="0" min="0" max="59" class="w-20 p-2 text-center border rounded-lg">
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 w-full">
+                                <button id="set-time-btn" class="btn btn-secondary">Set</button>
+                                <button id="play-pause-btn" class="btn btn-primary">Play</button>
+                                <button id="reset-time-btn" class="btn btn-secondary">Reset</button>
+                            </div>
+                            <div class="grid grid-cols-4 gap-2 w-full">
+                                ${['1H:0', 'HT:45', '2H:45', 'FT:90', 'ET1:90', 'ET2:105', 'PENS:120'].map(p => {
+                                    const [period, time] = p.split(':');
+                                    return `<button class="period-btn btn btn-secondary" data-period="${period}" data-time="${time}">${period}</button>`
+                                }).join('')}
+                            </div>
+                        </div>`;
+                    
+                    let timerInterval = null;
+                    let currentLiveState = {};
+                    const playPauseBtn = card.querySelector('#play-pause-btn');
+
+                    allUnsubscribers.push(onSnapshot(displayStateScoreboardDocRef, (doc) => {
+                        if (doc.exists() && doc.data().liveState) {
+                            currentLiveState = doc.data().liveState;
+                            card.querySelector('#minutes-input').value = currentLiveState.minutes || 0;
+                            card.querySelector('#seconds-input').value = currentLiveState.seconds || 0;
+                        }
+                    }));
+                    
+                    card.querySelector('#set-time-btn').addEventListener('click', () => {
+                        const minutes = parseInt(card.querySelector('#minutes-input').value);
+                        const seconds = parseInt(card.querySelector('#seconds-input').value);
+                        updateDoc(displayStateScoreboardDocRef, { 'liveState.minutes': minutes, 'liveState.seconds': seconds });
+                    });
+
+                    playPauseBtn.addEventListener('click', () => {
+                        if (timerInterval) {
+                            clearInterval(timerInterval);
+                            timerInterval = null;
+                            playPauseBtn.textContent = 'Play';
+                        } else {
+                            playPauseBtn.textContent = 'Pause';
+                            timerInterval = setInterval(() => {
+                                let seconds = (currentLiveState.seconds || 0) + 1;
+                                let minutes = currentLiveState.minutes || 0;
+                                if (seconds >= 60) {
+                                    seconds = 0;
+                                    minutes++;
+                                }
+                                updateDoc(displayStateScoreboardDocRef, { 'liveState.minutes': minutes, 'liveState.seconds': seconds });
+                            }, 1000);
+                        }
+                    });
+
+                    card.querySelectorAll('.period-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            if (timerInterval) {
+                                clearInterval(timerInterval);
+                                timerInterval = null;
+                                playPauseBtn.textContent = 'Play';
+                            }
+                            updateDoc(displayStateScoreboardDocRef, { 
+                                'liveState.period': btn.dataset.period,
+                                'liveState.minutes': parseInt(btn.dataset.time),
+                                'liveState.seconds': 0
+                            });
+                        });
+                    });
+
+                    return card;
+                }
+
+                function createEventsCard() {
+                     // TODO: Build and return the Broadcast Events card
+                     return document.createElement('div');
+                }
+
+                function createPodcastContentCard(control) {
+                     // TODO: Build and return the Podcast Questions/Headlines card
+                     return document.createElement('div');
+                }
+
+                function initializeInteractiveCards(fixtureId) {
+                    console.log(`Initializing interactive cards for fixture ID: ${fixtureId}`);
+                    // This is where we'll listen to the live data to populate dropdowns
+                    const liveDataDocRef = doc(db, 'liveData', String(fixtureId));
+                    const unsub = onSnapshot(liveDataDocRef, (doc) => {
+                        if (doc.exists()) {
+                            const data = doc.data();
+                            // Example: Populate player dropdowns for the events card
+                            // populatePlayerSelects(data.lineupData);
+                        }
+                    });
+                    allUnsubscribers.push(unsub);
+                }
+
+                return () => {
+                    console.log("Unsubscribing from all listeners...");
+                    allUnsubscribers.forEach(unsub => unsub());
+                };
+            }
+        });
+    </script>
+</body>
+</html>
+
