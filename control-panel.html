@@ -237,6 +237,7 @@
                 let allUnsubscribers = [];
                 const DC_UNITED_TEAM_ID = 1615;
                 let currentFixtureId = null;
+                let fixtureDataUnsub = null; 
 
                 // --- Element & Firestore References ---
                 const statusText = document.getElementById('status-text');
@@ -253,32 +254,37 @@
                 const podcastHeadlinesColRef = collection(db, 'podcastContent/headlines/items');
 
                 // --- Fixture Selection Logic ---
-                getFixturesBtn.addEventListener('click', () => {
+                const handleFixtureData = (doc) => {
+                    if (doc.exists() && doc.data().fixtures) {
+                        populateFixtureSelect(doc.data().fixtures);
+                        statusText.textContent = `Fixtures for ${yearSelect.value} loaded from database.`;
+                    } else {
+                        statusText.textContent = `No local data. Triggering backend to fetch fixtures...`;
+                        updateDoc(configDocRef, { "fetcher.manualFetchTriggers.fixtures": serverTimestamp() });
+                    }
+                };
+                
+                const listenForFixtures = () => {
+                    if (fixtureDataUnsub) fixtureDataUnsub(); // Unsubscribe from previous year listener
                     const year = yearSelect.value;
                     statusText.textContent = `Loading fixtures for ${year}...`;
                     const fixturesDocRef = doc(db, 'fixtures', `${DC_UNITED_TEAM_ID}_${year}`);
-                    const unsub = onSnapshot(fixturesDocRef, (doc) => {
-                        if (doc.exists() && doc.data().fixtures) {
-                            populateFixtureSelect(doc.data().fixtures);
-                            statusText.textContent = `Fixtures for ${year} loaded from database.`;
-                        } else {
-                            statusText.textContent = `No local data. Triggering backend to fetch fixtures...`;
-                            updateDoc(configDocRef, { "fetcher.manualFetchTriggers.fixtures": serverTimestamp() });
-                        }
-                    }, () => updateDoc(configDocRef, { "fetcher.manualFetchTriggers.fixtures": serverTimestamp() }));
-                    allUnsubscribers.push(unsub);
-                });
+                    fixtureDataUnsub = onSnapshot(fixturesDocRef, handleFixtureData, () => {
+                        statusText.textContent = `Error loading fixtures. Triggering backend fetch...`;
+                        updateDoc(configDocRef, { "fetcher.manualFetchTriggers.fixtures": serverTimestamp() });
+                    });
+                    allUnsubscribers.push(fixtureDataUnsub);
+                };
+
+                yearSelect.addEventListener('change', listenForFixtures);
+                getFixturesBtn.addEventListener('click', listenForFixtures);
 
                 const populateFixtureSelect = (fixtures) => {
                     fixtureSelect.innerHTML = '';
                     if (!fixtures || fixtures.length === 0) {
-                        fixtureSelect.innerHTML = '<option>No fixtures found</option>';
-                        return;
+                        fixtureSelect.innerHTML = '<option>No fixtures found</option>'; return;
                     }
-                    const grouped = fixtures.reduce((acc, f) => {
-                        (acc[f.league.name] = acc[f.league.name] || []).push(f);
-                        return acc;
-                    }, {});
+                    const grouped = fixtures.reduce((acc, f) => { (acc[f.league.name] = acc[f.league.name] || []).push(f); return acc; }, {});
                     Object.keys(grouped).sort().forEach(group => {
                         const optgroup = document.createElement('optgroup');
                         optgroup.label = group;
@@ -340,7 +346,6 @@
                     { id: 'playerSeason', title: 'Player Profile (Season)', type: 'playerProfileSeason' },
                     { id: 'prediction', title: 'Prediction Graphic', type: 'prediction' },
                 ];
-
                 const podcastControls = [
                     { id: 'questions', title: 'Podcast Questions', type: 'questions' },
                     { id: 'headlines', title: 'News Headlines', type: 'headlines' },
@@ -357,25 +362,27 @@
                 podcastControls.forEach(control => podcastPanel.appendChild(createCard(control)));
 
                 function createCard(control) {
+                    let card;
                     switch (control.type) {
-                        case 'toggle': return createToggleCard(control);
-                        case 'score': return createScoreCard();
-                        case 'clock': return createClockCard();
-                        case 'events': return createEventsCard();
-                        case 'questions': return createPodcastContentCard(control);
-                        case 'headlines': return createPodcastContentCard(control);
-                        default: 
-                            const emptyCard = document.createElement('div');
-                            emptyCard.className = 'card p-4 rounded-xl border';
-                            emptyCard.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2><p class="text-sm text-gray-500">Controls coming soon.</p>`;
-                            return emptyCard;
+                        case 'toggle': card = createToggleCard(control); break;
+                        case 'score': card = createScoreCard(); break;
+                        case 'clock': card = createClockCard(); break;
+                        case 'events': card = createEventsCard(); break;
+                        case 'questions':
+                        case 'headlines': card = createPodcastContentCard(control); break;
+                        case 'playerProfile': card = createPlayerSelectCard(control); break;
+                        case 'playerProfileSeason': card = createPlayerSelectCard(control); break;
+                        case 'prediction': card = createPredictionCard(control); break;
+                        default:
+                            card = document.createElement('div');
+                            card.className = 'card p-4 rounded-xl border';
+                            card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2><p class="text-sm text-gray-500">Controls coming soon.</p>`;
                     }
+                    return card;
                 }
                 
-                function createToggleCard(control) {
-                    const card = document.createElement('div');
-                    card.className = 'card p-4 rounded-xl border flex flex-col justify-between';
-                    card.innerHTML = `
+                // ... (createToggleCard, createScoreCard, createClockCard implementations are unchanged) ...
+                function createToggleCard(control){const card=document.createElement("div");card.className="card p-4 rounded-xl border flex flex-col justify-between",card.innerHTML=`
                         <h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2>
                         <div class="flex justify-between items-center mt-auto">
                             <span class="font-bold">Show Visual</span>
@@ -384,19 +391,7 @@
                                 <div class="switch-bg w-full h-full rounded-full transition"></div>
                                 <div class="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-6"></div>
                             </label>
-                        </div>`;
-                    const toggle = card.querySelector(`#toggle-${control.id}`);
-                    toggle.addEventListener('change', () => updateDoc(control.doc, { [control.field]: toggle.checked }));
-                    allUnsubscribers.push(onSnapshot(control.doc, (doc) => {
-                        if (doc.exists()) toggle.checked = !!doc.data()[control.field];
-                    }));
-                    return card;
-                }
-
-                function createScoreCard() {
-                    const card = document.createElement('div');
-                    card.className = 'card p-4 rounded-xl border';
-                    card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Score</h2>
+                        </div>`;const toggle=card.querySelector(`#toggle-${control.id}`);return toggle.addEventListener("change",()=>updateDoc(control.doc,{[control.field]:toggle.checked})),allUnsubscribers.push(onSnapshot(control.doc,t=>{t.exists()&&(toggle.checked=!!t.data()[control.field])})),card}function createScoreCard(){const card=document.createElement("div");card.className="card p-4 rounded-xl border",card.innerHTML=`<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Score</h2>
                         <div class="space-y-4">
                             <div class="flex justify-between items-center">
                                 <span id="home-name-control" class="font-bold">HOME</span>
@@ -414,31 +409,7 @@
                                     <button id="away-score-up" class="btn btn-secondary px-3">+</button>
                                 </div>
                             </div>
-                        </div>`;
-
-                    const homeScoreDisplay = card.querySelector('#home-score-display');
-                    const awayScoreDisplay = card.querySelector('#away-score-display');
-                    
-                    allUnsubscribers.push(onSnapshot(displayStateScoreboardDocRef, (doc) => {
-                        if (doc.exists() && doc.data().liveState) {
-                            const liveState = doc.data().liveState;
-                            homeScoreDisplay.textContent = liveState.homeScore ?? 0;
-                            awayScoreDisplay.textContent = liveState.awayScore ?? 0;
-                        }
-                    }));
-                    
-                    card.querySelector('#home-score-up').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.homeScore': increment(1) }));
-                    card.querySelector('#home-score-down').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.homeScore': increment(-1) }));
-                    card.querySelector('#away-score-up').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.awayScore': increment(1) }));
-                    card.querySelector('#away-score-down').addEventListener('click', () => updateDoc(displayStateScoreboardDocRef, { 'liveState.awayScore': increment(-1) }));
-
-                    return card;
-                }
-                
-                function createClockCard() {
-                    const card = document.createElement('div');
-                    card.className = 'card p-4 rounded-xl border';
-                    card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Game Clock & Period</h2>
+                        </div>`;const homeScoreDisplay=card.querySelector("#home-score-display"),awayScoreDisplay=card.querySelector("#away-score-display");return allUnsubscribers.push(onSnapshot(displayStateScoreboardDocRef,t=>{if(t.exists()&&t.data().liveState){const e=t.data().liveState;homeScoreDisplay.textContent=e.homeScore??0,awayScoreDisplay.textContent=e.awayScore??0}})),card.querySelector("#home-score-up").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.homeScore":increment(1)})),card.querySelector("#home-score-down").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.homeScore":increment(-1)})),card.querySelector("#away-score-up").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.awayScore":increment(1)})),card.querySelector("#away-score-down").addEventListener("click",()=>updateDoc(displayStateScoreboardDocRef,{"liveState.awayScore":increment(-1)})),card}function createClockCard(){const card=document.createElement("div");card.className="card p-4 rounded-xl border",card.innerHTML=`<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Game Clock & Period</h2>
                         <div class="flex flex-col items-center gap-4">
                             <div class="flex items-center gap-2 text-xl font-bold">
                                 <input type="number" id="minutes-input" value="0" min="0" class="w-20 p-2 text-center border rounded-lg">
@@ -451,65 +422,9 @@
                                 <button id="reset-time-btn" class="btn btn-secondary">Reset</button>
                             </div>
                             <div class="grid grid-cols-4 gap-2 w-full">
-                                ${['1H:0', 'HT:45', '2H:45', 'FT:90', 'ET1:90', 'ET2:105', 'PENS:120', 'Abd:0'].map(p => {
-                                    const [period, time] = p.split(':');
-                                    return `<button class="period-btn btn btn-secondary" data-period="${period}" data-time="${time}">${period}</button>`
-                                }).join('')}
+                                ${["1H:0","HT:45","2H:45","FT:90","ET1:90","ET2:105","PENS:120","Abd:0"].map(t=>{const[e,a]=t.split(":");return`<button class="period-btn btn btn-secondary" data-period="${e}" data-time="${a}">${e}</button>`}).join("")}
                             </div>
-                        </div>`;
-                    
-                    let timerInterval = null;
-                    let currentLiveState = {};
-                    const playPauseBtn = card.querySelector('#play-pause-btn');
-
-                    allUnsubscribers.push(onSnapshot(displayStateScoreboardDocRef, (doc) => {
-                        if (doc.exists() && doc.data().liveState) {
-                            currentLiveState = doc.data().liveState;
-                            card.querySelector('#minutes-input').value = currentLiveState.minutes || 0;
-                            card.querySelector('#seconds-input').value = currentLiveState.seconds || 0;
-                        }
-                    }));
-                    
-                    card.querySelector('#set-time-btn').addEventListener('click', () => {
-                        const minutes = parseInt(card.querySelector('#minutes-input').value);
-                        const seconds = parseInt(card.querySelector('#seconds-input').value);
-                        updateDoc(displayStateScoreboardDocRef, { 'liveState.minutes': minutes, 'liveState.seconds': seconds });
-                    });
-
-                    playPauseBtn.addEventListener('click', () => {
-                        if (timerInterval) {
-                            clearInterval(timerInterval);
-                            timerInterval = null;
-                            playPauseBtn.textContent = 'Play';
-                        } else {
-                            playPauseBtn.textContent = 'Pause';
-                            timerInterval = setInterval(() => {
-                                let seconds = (currentLiveState.seconds || 0) + 1;
-                                let minutes = currentLiveState.minutes || 0;
-                                if (seconds >= 60) { seconds = 0; minutes++; }
-                                updateDoc(displayStateScoreboardDocRef, { 'liveState.minutes': minutes, 'liveState.seconds': seconds });
-                            }, 1000);
-                        }
-                    });
-
-                    card.querySelectorAll('.period-btn').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; playPauseBtn.textContent = 'Play'; }
-                            updateDoc(displayStateScoreboardDocRef, { 
-                                'liveState.period': btn.dataset.period,
-                                'liveState.minutes': parseInt(btn.dataset.time),
-                                'liveState.seconds': 0
-                            });
-                        });
-                    });
-                    
-                    card.querySelector('#reset-time-btn').addEventListener('click', () => {
-                        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; playPauseBtn.textContent = 'Play'; }
-                        updateDoc(displayStateScoreboardDocRef, { 'liveState.minutes': 0, 'liveState.seconds': 0 });
-                    });
-
-                    return card;
-                }
+                        </div>`;let timerInterval=null;let currentLiveState={};const playPauseBtn=card.querySelector("#play-pause-btn");return allUnsubscribers.push(onSnapshot(displayStateScoreboardDocRef,t=>{t.exists()&&t.data().liveState&&(currentLiveState=t.data().liveState,card.querySelector("#minutes-input").value=currentLiveState.minutes||0,card.querySelector("#seconds-input").value=currentLiveState.seconds||0)})),card.querySelector("#set-time-btn").addEventListener("click",()=>{const t=parseInt(card.querySelector("#minutes-input").value),e=parseInt(card.querySelector("#seconds-input").value);updateDoc(displayStateScoreboardDocRef,{"liveState.minutes":t,"liveState.seconds":e})}),playPauseBtn.addEventListener("click",()=>{timerInterval?(clearInterval(timerInterval),timerInterval=null,playPauseBtn.textContent="Play"):(playPauseBtn.textContent="Pause",timerInterval=setInterval(()=>{let t=(currentLiveState.seconds||0)+1,e=currentLiveState.minutes||0;t>=60&&(t=0,e++),updateDoc(displayStateScoreboardDocRef,{"liveState.minutes":e,"liveState.seconds":t})},1e3))}),card.querySelectorAll(".period-btn").forEach(t=>{t.addEventListener("click",()=>{timerInterval&&(clearInterval(timerInterval),timerInterval=null,playPauseBtn.textContent="Play"),updateDoc(displayStateScoreboardDocRef,{"liveState.period":t.dataset.period,"liveState.minutes":parseInt(t.dataset.time),"liveState.seconds":0})})}),card.querySelector("#reset-time-btn").addEventListener("click",()=>{timerInterval&&(clearInterval(timerInterval),timerInterval=null,playPauseBtn.textContent="Play"),updateDoc(displayStateScoreboardDocRef,{"liveState.minutes":0,"liveState.seconds":0})}),card}
 
                 function createEventsCard() {
                     const card = document.createElement('div');
@@ -522,14 +437,15 @@
                                 <option value="red">Red Card</option>
                                 <option value="sub">Substitution</option>
                                 <option value="var_goal">VAR: Goal Check</option>
-                                <!-- Add other VAR options -->
+                                <option value="var_no_goal">VAR: No Goal</option>
+                                <option value="var_penalty">VAR: Penalty Check</option>
                             </select>
                             <div id="single-player-section">
                                 <select id="event-player-select" class="w-full p-2 border rounded-lg"><option>(Load fixture first)</option></select>
                             </div>
                             <div id="sub-player-section" class="hidden grid grid-cols-2 gap-2">
-                                <select id="player-off-select"><option>Player Off...</option></select>
-                                <select id="player-on-select"><option>Player On...</option></select>
+                                <select id="player-off-select" class="w-full p-2 border rounded-lg"><option>Player Off...</option></select>
+                                <select id="player-on-select" class="w-full p-2 border rounded-lg"><option>Player On...</option></select>
                             </div>
                              <button id="trigger-event-btn" class="btn btn-primary w-full py-2">Trigger Event</button>
                         </div>`;
@@ -548,16 +464,56 @@
                         const type = eventTypeSelect.value;
                         let eventData = {};
                         if (type === 'sub') {
-                            const playerOn = card.querySelector('#player-on-select').value;
-                            const playerOff = card.querySelector('#player-off-select').value;
+                            const playerOnSelect = card.querySelector('#player-on-select');
+                            const playerOffSelect = card.querySelector('#player-off-select');
+                            const playerOn = playerOnSelect.value;
+                            const playerOff = playerOffSelect.value;
                             if (!playerOn || !playerOff) return;
-                            eventData = { playerOn, playerOff, teamId: card.querySelector('#player-on-select').options[card.querySelector('#player-on-select').selectedIndex].dataset.teamId };
+                            eventData = { playerOn, playerOff, teamId: playerOnSelect.options[playerOnSelect.selectedIndex].dataset.teamId };
                         } else {
-                            const player = card.querySelector('#event-player-select').value;
+                            const playerSelect = card.querySelector('#event-player-select');
+                            const player = playerSelect.value;
                             if (!player) return;
-                             eventData = { player, teamId: card.querySelector('#event-player-select').options[card.querySelector('#event-player-select').selectedIndex].dataset.teamId };
+                             eventData = { player, teamId: playerSelect.options[playerSelect.selectedIndex].dataset.teamId };
                         }
                         updateDoc(displayStateScoreboardDocRef, { currentBroadcastEvent: { type, data: eventData, id: Date.now() } });
+                    });
+                    
+                    return card;
+                }
+
+                function createPlayerSelectCard(control) {
+                    const card = document.createElement('div');
+                    card.className = 'card p-4 rounded-xl border';
+                    const fieldName = control.id === 'playerProfile' ? 'selectedPlayerId_Profile' : 'selectedPlayerId_Season';
+                    card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2>
+                        <div class="space-y-4">
+                            <select id="${control.id}-select" class="w-full p-2 border rounded-lg"><option>(Load fixture first)</option></select>
+                            <button class="btn btn-primary w-full py-2">Show Player</button>
+                        </div>`;
+                    
+                    card.querySelector('button').addEventListener('click', () => {
+                        const selectedId = card.querySelector('select').value;
+                        if(selectedId) {
+                            updateDoc(displayStateScoreboardDocRef, { [fieldName]: parseInt(selectedId), [control.field]: true });
+                        }
+                    });
+
+                    return card;
+                }
+                
+                function createPredictionCard(control) {
+                     const card = document.createElement('div');
+                    card.className = 'card p-4 rounded-xl border';
+                    card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2>
+                        <div class="space-y-4">
+                            <button class="btn btn-primary w-full py-2">Load Data & Show</button>
+                        </div>`;
+                    
+                    card.querySelector('button').addEventListener('click', () => {
+                        statusText.textContent = `Triggering backend to fetch prediction data...`;
+                        updateDoc(configDocRef, { "fetcher.manualFetchTriggers.predictionData": serverTimestamp() });
+                        updateDoc(displayStateScoreboardDocRef, { showPrediction: true });
                     });
                     
                     return card;
@@ -570,11 +526,11 @@
                     card.className = 'card p-4 rounded-xl border';
                     card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2>
                         <div class="dynamic-form space-y-2">
-                            <input type="text" id="${control.id}-input-1" placeholder="${isQuestions ? 'Enter question...' : 'Enter title...'}">
-                            <textarea id="${control.id}-input-2" placeholder="${isQuestions ? 'Enter name...' : 'Enter description...'}" rows="2"></textarea>
+                            <input type="text" id="${control.id}-input-1" class="w-full p-2 border rounded-lg" placeholder="${isQuestions ? 'Enter question...' : 'Enter title...'}">
+                            <textarea id="${control.id}-input-2" class="w-full p-2 border rounded-lg" placeholder="${isQuestions ? 'Enter name...' : 'Enter description...'}" rows="2"></textarea>
                             ${isQuestions ? 
-                                `<select id="${control.id}-input-3"><option value="twitter">Twitter</option><option value="facebook">Facebook</option><option value="discord">Discord</option></select>` : 
-                                `<input type="text" id="${control.id}-input-3" placeholder="image.png">`
+                                `<select id="${control.id}-input-3" class="w-full p-2 border rounded-lg"><option value="twitter">Twitter</option><option value="facebook">Facebook</option><option value="discord">Discord</option><option value="reddit">Reddit</option><option value="other">Other</option></select>` : 
+                                `<input type="text" id="${control.id}-input-3" class="w-full p-2 border rounded-lg" placeholder="image.png">`
                             }
                             <button id="add-${control.id}-btn" class="btn btn-primary w-full">Add</button>
                         </div>
@@ -602,7 +558,10 @@
                                     <button class="show-btn btn btn-secondary text-xs px-2 py-1">Show</button>
                                     <button class="remove-btn btn btn-danger text-xs px-2 py-1">X</button>
                                 </div>`;
-                            itemEl.querySelector('.show-btn').addEventListener('click', () => updateDoc(displayStatePodcastDocRef, isQuestions ? { currentQuestionId: doc.id } : { currentHeadlineId: doc.id }));
+                            itemEl.querySelector('.show-btn').addEventListener('click', () => {
+                                const fieldToUpdate = isQuestions ? { currentQuestionId: doc.id, showQuestions: true } : { currentHeadlineId: doc.id, showNews: true };
+                                updateDoc(displayStatePodcastDocRef, fieldToUpdate);
+                            });
                             itemEl.querySelector('.remove-btn').addEventListener('click', () => deleteDoc(doc.ref));
                             listContainer.appendChild(itemEl);
                         });
@@ -616,27 +575,33 @@
                     const unsub = onSnapshot(liveDataDocRef, (doc) => {
                         if (doc.exists()) {
                             const data = doc.data();
-                            // Populate home/away names on score card
+                            
                             const homeName = document.getElementById('home-name-control');
                             const awayName = document.getElementById('away-name-control');
                             if (homeName && data.fixtureDetails) {
                                 homeName.textContent = data.fixtureDetails.teams.home.name;
                                 awayName.textContent = data.fixtureDetails.teams.away.name;
                             }
-                            // Populate player dropdowns
-                            const eventPlayerSelect = document.getElementById('event-player-select');
-                            const playerOffSelect = document.getElementById('player-off-select');
-                            const playerOnSelect = document.getElementById('player-on-select');
-                            if(eventPlayerSelect && data.lineupData) {
+                            
+                            const playerDropdowns = [
+                                document.getElementById('event-player-select'),
+                                document.getElementById('player-off-select'),
+                                document.getElementById('player-on-select'),
+                                document.getElementById('playerProfile-select'),
+                                document.getElementById('playerProfileSeason-select'),
+                            ];
+                            
+                            if(playerDropdowns[0] && data.lineupData) {
                                 const { home, away } = data.lineupData;
-                                eventPlayerSelect.innerHTML = playerOffSelect.innerHTML = playerOnSelect.innerHTML = ''; // Clear
                                 const populate = (select) => {
+                                    if(!select) return;
+                                    select.innerHTML = '';
                                     const createOptGroup = (team, type) => {
                                         const group = document.createElement('optgroup');
                                         group.label = team.team.name;
                                         team[type].forEach(p => {
                                             const opt = document.createElement('option');
-                                            opt.value = p.player.name;
+                                            opt.value = control.type.includes('playerProfile') ? p.player.id : p.player.name;
                                             opt.dataset.teamId = team.team.id;
                                             opt.textContent = `#${p.player.number} ${p.player.name}`;
                                             group.appendChild(opt);
@@ -651,13 +616,16 @@
                                         select.appendChild(createOptGroup(away, 'startXI'));
                                         select.appendChild(createOptGroup(away, 'substitutes'));
                                     }
-                                }
-                                [eventPlayerSelect, playerOffSelect, playerOnSelect].forEach(populate);
+                                };
+                                playerDropdowns.forEach(populate);
                             }
                         }
                     });
                     allUnsubscribers.push(unsub);
                 }
+
+                // Initial call to setup fixtures on load
+                listenForFixtures();
 
                 return () => {
                     console.log("Unsubscribing from all listeners...");
