@@ -1,7 +1,12 @@
+# This file configures your Netlify site, including scheduled functions.
+# It should be placed in the root directory of your project.
+
 [build]
+  # This tells Netlify where your serverless functions are located.
   functions = "netlify/functions/"
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/football-api/:splat"
-  status = 200
+# This section defines the scheduled function.
+[functions."data-fetcher"]
+  # This is a cron expression that means "run this function at the start of every minute".
+  # For testing, every minute is good. For production, you might change it to "*/2 * * * *" (every 2 minutes).
+  schedule = "* * * * *"

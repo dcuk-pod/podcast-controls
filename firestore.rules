@@ -1,0 +1,44 @@
+// These rules are a starting point. They allow your server-side function to write
+// anywhere, but restrict clients (your web apps) to only reading data.
+// This enforces the new architecture where only the backend writes data.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // By default, deny all reads and writes.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Allow any client (your visuals, control app) to read from these collections.
+    match /config/{docId} {
+      allow read: if true;
+      // Allow authenticated users (your control app) to write to the config.
+      allow write: if request.auth != null;
+    }
+    match /teams/{docId} {
+      allow read: if true;
+    }
+    match /players/{docId} {
+      allow read: if true;
+    }
+    match /fixtures/{docId} {
+      allow read: if true;
+    }
+    match /liveData/{docId} {
+      allow read: if true;
+    }
+    match /leagueData/{docId} {
+      allow read: if true;
+    }
+    match /displayState/{docId} {
+      allow read: if true;
+      // Allow authenticated users (your control app) to write to the display state.
+      allow write: if request.auth != null;
+    }
+     match /podcastContent/{path=**} {
+      allow read: if true;
+       // Allow authenticated users (your control app) to manage podcast content.
+      allow write: if request.auth != null;
+    }
+  }
+}
