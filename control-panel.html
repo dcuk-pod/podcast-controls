@@ -259,20 +259,23 @@
                         populateFixtureSelect(doc.data().fixtures);
                         statusText.textContent = `Fixtures for ${yearSelect.value} loaded from database.`;
                     } else {
-                        statusText.textContent = `No local data. Triggering backend to fetch fixtures...`;
-                        updateDoc(configDocRef, { "fetcher.manualFetchTriggers.fixtures": serverTimestamp() });
+                        statusText.textContent = `No local data found for ${yearSelect.value}. Triggering backend to fetch...`;
+                        updateDoc(configDocRef, { "fetcher.manualFetchTriggers.fixtures": serverTimestamp(), "fetcher.targetYear_Fixtures": yearSelect.value });
                     }
                 };
                 
                 const listenForFixtures = () => {
-                    if (fixtureDataUnsub) fixtureDataUnsub(); // Unsubscribe from previous year listener
+                    if (fixtureDataUnsub) fixtureDataUnsub(); 
                     const year = yearSelect.value;
-                    statusText.textContent = `Loading fixtures for ${year}...`;
+                    statusText.textContent = `Listening for fixtures for ${year}...`;
                     const fixturesDocRef = doc(db, 'fixtures', `${DC_UNITED_TEAM_ID}_${year}`);
-                    fixtureDataUnsub = onSnapshot(fixturesDocRef, handleFixtureData, () => {
+                    
+                    fixtureDataUnsub = onSnapshot(fixturesDocRef, handleFixtureData, (error) => {
+                        console.error("Error listening for fixtures: ", error);
                         statusText.textContent = `Error loading fixtures. Triggering backend fetch...`;
-                        updateDoc(configDocRef, { "fetcher.manualFetchTriggers.fixtures": serverTimestamp() });
+                        updateDoc(configDocRef, { "fetcher.manualFetchTriggers.fixtures": serverTimestamp(), "fetcher.targetYear_Fixtures": year });
                     });
+                    
                     allUnsubscribers.push(fixtureDataUnsub);
                 };
 
@@ -282,18 +285,21 @@
                 const populateFixtureSelect = (fixtures) => {
                     fixtureSelect.innerHTML = '';
                     if (!fixtures || fixtures.length === 0) {
-                        fixtureSelect.innerHTML = '<option>No fixtures found</option>'; return;
+                        fixtureSelect.innerHTML = '<option>No fixtures found for this year</option>'; return;
                     }
                     const grouped = fixtures.reduce((acc, f) => { (acc[f.league.name] = acc[f.league.name] || []).push(f); return acc; }, {});
+                    
                     Object.keys(grouped).sort().forEach(group => {
                         const optgroup = document.createElement('optgroup');
                         optgroup.label = group;
-                        grouped[group].forEach(f => {
-                            const option = document.createElement('option');
-                            option.value = f.fixture.id;
-                            option.textContent = `${f.teams.home.name} vs ${f.teams.away.name} (${new Date(f.fixture.date).toLocaleDateString()})`;
-                            optgroup.appendChild(option);
-                        });
+                        grouped[group]
+                            .sort((a,b) => new Date(a.fixture.date) - new Date(b.fixture.date))
+                            .forEach(f => {
+                                const option = document.createElement('option');
+                                option.value = f.fixture.id;
+                                option.textContent = `${new Date(f.fixture.date).toLocaleDateString()} - ${f.teams.home.name} vs ${f.teams.away.name}`;
+                                optgroup.appendChild(option);
+                            });
                         fixtureSelect.appendChild(optgroup);
                     });
                 };
@@ -340,21 +346,21 @@
                     { id: 'score', title: 'Score', type: 'score' },
                     { id: 'clock', title: 'Game Clock & Period', type: 'clock' },
                     { id: 'events', title: 'Broadcast Events', type: 'events' },
-                    { id: 'scoreboard', title: 'Scoreboard Visibility', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showScoreboard' },
+                    { id: 'scoreboard', title: 'Scoreboard Visibility', type: 'toggle', docRef: displayStateScoreboardDocRef, field: 'showScoreboard' },
                     { id: 'playerProfile', title: 'Player Profile (Match)', type: 'playerProfile' },
-                    { id: 'playerStats', title: 'Player Stats', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showPlayerStats' },
-                    { id: 'combinedLineup', title: 'Combined Lineup', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showLineup' },
-                    { id: 'matchStats', title: 'Match Stats', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showMatchStats' },
-                    { id: 'scroller', title: 'Scroller', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showScroller' },
-                    { id: 'combinedEvents', title: 'Combined Events', type: 'toggle', doc: displayStateScoreboardDocRef, field: 'showCombinedEvents' },
+                    { id: 'playerStats', title: 'Player Stats', type: 'toggle', docRef: displayStateScoreboardDocRef, field: 'showPlayerStats' },
+                    { id: 'combinedLineup', title: 'Combined Lineup', type: 'toggle', docRef: displayStateScoreboardDocRef, field: 'showLineup' },
+                    { id: 'matchStats', title: 'Match Stats', type: 'toggle', docRef: displayStateScoreboardDocRef, field: 'showMatchStats' },
+                    { id: 'scroller', title: 'Scroller', type: 'toggle', docRef: displayStateScoreboardDocRef, field: 'showScroller' },
+                    { id: 'combinedEvents', title: 'Combined Events', type: 'toggle', docRef: displayStateScoreboardDocRef, field: 'showCombinedEvents' },
                     { id: 'playerSeason', title: 'Player Profile (Season)', type: 'playerProfileSeason' },
                     { id: 'prediction', title: 'Prediction Graphic', type: 'prediction' },
                 ];
                 const podcastControls = [
                     { id: 'questions', title: 'Podcast Questions', type: 'questions' },
                     { id: 'headlines', title: 'News Headlines', type: 'headlines' },
-                    { id: 'podcastFixtures', title: 'Fixtures Visual', type: 'toggle', doc: displayStatePodcastDocRef, field: 'showFixtures' },
-                    { id: 'nextFixtures', title: 'Next Fixtures Visual', type: 'toggle', doc: displayStatePodcastDocRef, field: 'showNextFixtures' },
+                    { id: 'podcastFixtures', title: 'Fixtures Visual', type: 'toggle', docRef: displayStatePodcastDocRef, field: 'showFixtures' },
+                    { id: 'nextFixtures', title: 'Next Fixtures Visual', type: 'toggle', docRef: displayStatePodcastDocRef, field: 'showNextFixtures' },
                 ];
                 
                 const scoreboardPanel = document.getElementById('tab-panel-scoreboard');
@@ -394,7 +400,7 @@
                                 <div class="switch-bg w-full h-full rounded-full transition"></div>
                                 <div class="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-6"></div>
                             </label>
-                        </div>`;const toggle=card.querySelector(`#toggle-${control.id}`);return toggle.addEventListener("change",()=>updateDoc(control.doc,{[control.field]:toggle.checked})),allUnsubscribers.push(onSnapshot(control.doc,t=>{t.exists()&&(toggle.checked=!!t.data()[control.field])})),card}
+                        </div>`;const toggle=card.querySelector(`#toggle-${control.id}`);return toggle.addEventListener("change",()=>updateDoc(control.docRef,{[control.field]:toggle.checked})),allUnsubscribers.push(onSnapshot(control.docRef,t=>{t.exists()&&(toggle.checked=!!t.data()[control.field])})),card}
                 
                 function createScoreCard(){const card=document.createElement("div");card.className="card p-4 rounded-xl border",card.innerHTML=`<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">Score</h2>
                         <div class="space-y-4">
@@ -492,7 +498,9 @@
                 function createPlayerSelectCard(control) {
                     const card = document.createElement('div');
                     card.className = 'card p-4 rounded-xl border';
-                    const fieldName = control.id === 'playerProfile' ? 'selectedPlayerId_Profile' : 'selectedPlayerId_Season';
+                    const isSeasonCard = control.id === 'playerProfileSeason';
+                    const fieldName = isSeasonCard ? 'selectedPlayerId_Season' : 'selectedPlayerId_Profile';
+                    
                     card.innerHTML = `<h2 class="card-title text-lg font-bold pb-2 mb-4 border-b">${control.title}</h2>
                         <div class="space-y-4">
                             <select id="${control.id}-select" class="w-full p-2 border rounded-lg"><option>(Load fixture first)</option></select>
@@ -502,15 +510,14 @@
                     card.querySelector('button').addEventListener('click', () => {
                         const selectedId = card.querySelector('select').value;
                         if(selectedId) {
-                             if (control.id === 'playerProfileSeason') {
-                                 // For season profile, we trigger the backend to fetch the specific player's season data
+                            if (isSeasonCard) {
                                 statusText.textContent = `Triggering backend to fetch season data for player ${selectedId}...`;
                                  updateDoc(configDocRef, { 
                                      "fetcher.manualFetchTriggers.playerSeasonData": serverTimestamp(),
-                                     "fetcher.targetPlayerId_Season": parseInt(selectedId) // Tell the fetcher WHICH player to get
+                                     "fetcher.targetPlayerId_Season": parseInt(selectedId)
                                  });
                              }
-                            updateDoc(displayStateScoreboardDocRef, { [fieldName]: parseInt(selectedId), showPlayerProfile: control.id === 'playerProfile', showPlayerSeason: control.id === 'playerProfileSeason' });
+                            updateDoc(displayStateScoreboardDocRef, { [fieldName]: parseInt(selectedId), showPlayerProfile: !isSeasonCard, showPlayerSeason: isSeasonCard });
                         }
                     });
 
@@ -606,8 +613,9 @@
                                 {el: document.getElementById('playerProfileSeason-select'), type: 'id'},
                             ];
                             
-                            if(playerDropdowns[0].el && data.lineupData) {
+                            if(playerDropdowns[0].el && data.lineupData && data.lineupData.home && data.lineupData.away) {
                                 const { home, away } = data.lineupData;
+                                
                                 const populate = (select, valueType) => {
                                     if(!select) return;
                                     select.innerHTML = '';
